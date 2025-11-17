@@ -1,0 +1,28 @@
+# Configuration for standard SeismicCNN model
+
+model:
+  type: 'standard'
+  num_classes: 3  # Background, Urban, Tectonic
+  input_channels: 3  # E-N-Z components
+  input_length: 6000  # 60 seconds at 100 Hz
+  dropout_rate: 0.3
+
+training:
+  batch_size: 32
+  num_epochs: 50
+  learning_rate: 0.001
+  weight_decay: 1e-5
+  optimizer: 'adam'  # Options: 'adam', 'adamw', 'sgd'
+  scheduler: 'step'  # Options: 'step', 'cosine', 'plateau'
+  early_stopping_patience: 10
+
+data:
+  val_split: 0.2
+  use_augmentation: true
+  sampling_rate: 100.0  # Hz
+  lowcut: 1.0  # Hz
+  highcut: 45.0  # Hz
+  normalize_method: 'standard'  # Options: 'standard', 'minmax', 'peak'
+
+# Number of samples for dummy data (replace with actual data loading)
+num_samples: 1000

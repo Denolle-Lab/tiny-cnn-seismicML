@@ -1,0 +1,27 @@
+# Configuration for compact SeismicCNN model (for edge devices)
+
+model:
+  type: 'compact'
+  num_classes: 3  # Background, Urban, Tectonic
+  input_channels: 3  # E-N-Z components
+  input_length: 6000  # 60 seconds at 100 Hz
+
+training:
+  batch_size: 64
+  num_epochs: 100
+  learning_rate: 0.002
+  weight_decay: 1e-5
+  optimizer: 'adam'
+  scheduler: 'cosine'
+  early_stopping_patience: 15
+
+data:
+  val_split: 0.2
+  use_augmentation: true
+  sampling_rate: 100.0  # Hz
+  lowcut: 1.0  # Hz
+  highcut: 45.0  # Hz
+  normalize_method: 'standard'
+
+# Number of samples for dummy data (replace with actual data loading)
+num_samples: 1000
