@@ -36,18 +36,33 @@ env/
 # Jupyter Notebook
 .ipynb_checkpoints
 
-# PyTorch
+# PyTorch models and training outputs
 *.pth
 *.pt
 checkpoints/
 logs/
 runs/
 
-# Data files (but not src/data module)
+# Project-specific data directories
 /data/
+notebooks/02_labeling/labeled_data/
+models/*.pth
+notebooks/04_inference/predictions/
+examples/labeled_data/
+examples/predictions/
+
+# Data files
 *.h5
 *.hdf5
+*.mseed
+*.sac
+*.npy
+*.npz
+
+# CSV files (except config examples)
+*.csv
 
 # OS
 .DS_Store
 Thumbs.db
+
