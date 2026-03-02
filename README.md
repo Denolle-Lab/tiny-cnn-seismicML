@@ -256,10 +256,40 @@ overlap = 0.5        # 50%
 # ... (see examples for complete windowing code)
 ```
 
+## Explainer Web App
+
+An interactive **React** app explains how the CNN classifies waveforms (Noise vs Earthquake) and lets you run the compact model in the browser (TensorFlow.js) and step through layers.
+
+- **Location:** `explainer-app/`
+- **Setup & run:** See [explainer-app/README.md](explainer-app/README.md)
+- **Deploy:** See [explainer-app/DEPLOY.md](explainer-app/DEPLOY.md) (Vercel, Netlify, GitHub Pages)
+
+Quick setup from repo root:
+
+```bash
+# Export waveforms and model weights for the app
+python scripts/export_waveforms_for_explainer.py
+python scripts/export_compact_weights_for_tfjs.py
+
+cd explainer-app && npm install && npm run dev
+```
+
+Then open http://localhost:5173
+
 ## Project Structure
 
 ```
 tiny-cnn-seismicML/
+├── explainer-app/              # React CNN explainer (browser app)
+│   ├── public/
+│   │   ├── models/              # TF.js weights (from export script)
+│   │   ├── waveforms.json      # Sample waveforms (from export script)
+│   │   └── images/              # Result figures
+│   ├── src/
+│   └── DEPLOY.md
+├── scripts/
+│   ├── export_waveforms_for_explainer.py
+│   └── export_compact_weights_for_tfjs.py
 ├── src/
 │   ├── models/
 │   │   ├── __init__.py

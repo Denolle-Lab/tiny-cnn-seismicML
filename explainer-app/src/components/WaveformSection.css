@@ -1,0 +1,67 @@
+.waveform-section {
+  max-width: 100%;
+}
+
+.waveform-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.waveform-card h3 {
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.magnitude-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.waveform-card .tab {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.waveform-card .tab.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.waveform-chart {
+  height: 160px;
+  width: 100%;
+}
+
+.waveform-chart .axis path,
+.waveform-chart .axis line {
+  stroke: var(--border);
+}
+
+.waveform-chart .axis text {
+  fill: var(--text-muted);
+  font-size: 10px;
+}
+
+.waveform-chart .axis-label {
+  fill: var(--text-muted);
+  font-size: 11px;
+}
+
+.waveform-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+.waveform-error,
+.waveform-loading {
+  color: var(--text-muted);
+  padding: 16px;
+}
