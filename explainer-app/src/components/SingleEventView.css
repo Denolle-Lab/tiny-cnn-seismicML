@@ -1,0 +1,103 @@
+.single-event-view {
+  padding: 0;
+}
+
+.single-event-header {
+  margin-bottom: 16px;
+}
+
+.single-event-header h2 {
+  font-size: 1.25rem;
+  margin-bottom: 6px;
+}
+
+.event-info {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.event-hint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.insight-panel {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+.insight-panel h3 {
+  font-size: 1rem;
+  margin-bottom: 10px;
+}
+
+.insight-panel ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.insight-panel li {
+  margin-bottom: 8px;
+}
+
+.map-wrap {
+  height: 380px;
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+
+.single-event-map {
+  height: 100%;
+  min-height: 380px;
+  width: 100%;
+}
+
+.station-waveform-panel {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  background: var(--card);
+}
+
+.station-waveform-panel h3 {
+  font-size: 1rem;
+  margin-bottom: 12px;
+}
+
+.station-waveform-chart {
+  height: 140px;
+  width: 100%;
+}
+
+.station-waveform-chart .axis path,
+.station-waveform-chart .axis line {
+  stroke: var(--border);
+}
+
+.station-waveform-chart .axis text,
+.station-waveform-chart .axis-label {
+  fill: var(--text-muted);
+  font-size: 10px;
+}
+
+.station-prompt {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-top: 12px;
+}
+
+.single-event-error,
+.single-event-loading {
+  color: var(--text-muted);
+  padding: 24px;
+}

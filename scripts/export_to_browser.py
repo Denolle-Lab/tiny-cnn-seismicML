@@ -26,8 +26,12 @@ sys.path.insert(0, str(project_root))
 
 from src.models.cnn import SeismicCNN, CompactSeismicCNN
 
+DEFAULT_CLASS_NAMES = ["Noise", "Traffic", "Earthquake"]
+DEFAULT_SAMPLING_RATE = 100
+DEFAULT_INPUT_LENGTH = 6000
 
-def export_pytorch_to_onnx(model, output_path, model_name="seismic_cnn"):
+
+def export_pytorch_to_onnx(model, output_path, model_name="seismic_cnn", input_channels=1, input_length=DEFAULT_INPUT_LENGTH):
     """
     Export a PyTorch model to ONNX format.
     
@@ -40,8 +44,7 @@ def export_pytorch_to_onnx(model, output_path, model_name="seismic_cnn"):
     model.eval()
     
     # Create dummy input matching the expected shape (batch_size, channels, samples)
-    # For seismic data: 1 channel, 500 samples (5 seconds at 100 Hz)
-    dummy_input = torch.randn(1, 3, 6000)
+    dummy_input = torch.randn(1, input_channels, input_length)
     
     # Export the model
     torch.onnx.export(
@@ -67,7 +70,52 @@ def export_pytorch_to_onnx(model, output_path, model_name="seismic_cnn"):
     print(f"✓ ONNX model verification passed")
 
 
-def create_model_metadata(model_path, output_dir, model_type="compact"):
+def get_state_dict(checkpoint):
+    """Return the model state dict from either a raw state dict or notebook checkpoint."""
+    if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
+        return checkpoint['model_state_dict']
+    return checkpoint
+
+
+def infer_checkpoint_info(checkpoint, model_type):
+    """Infer browser metadata from the notebook checkpoint when available."""
+    state_dict = get_state_dict(checkpoint)
+    num_classes = checkpoint.get('num_classes') if isinstance(checkpoint, dict) else None
+    input_channels = checkpoint.get('input_channels') if isinstance(checkpoint, dict) else None
+    input_length = checkpoint.get('input_length') if isinstance(checkpoint, dict) else None
+    class_names = checkpoint.get('class_names') if isinstance(checkpoint, dict) else None
+
+    if num_classes is None:
+        fc_key = 'fc.weight' if model_type == 'compact' else 'fc2.weight'
+        num_classes = int(state_dict[fc_key].shape[0])
+    if input_channels is None:
+        input_channels = int(state_dict['conv1.weight'].shape[1])
+    if input_length is None:
+        input_length = DEFAULT_INPUT_LENGTH
+    if class_names is None:
+        class_names = ["Noise", "Earthquake"] if num_classes == 2 else DEFAULT_CLASS_NAMES[:num_classes]
+
+    return {
+        "num_classes": int(num_classes),
+        "input_channels": int(input_channels),
+        "input_length": int(input_length),
+        "class_names": list(class_names),
+    }
+
+
+def build_model(model_type, checkpoint_info):
+    """Create the matching PyTorch model for export."""
+    kwargs = {
+        "num_classes": checkpoint_info["num_classes"],
+        "input_channels": checkpoint_info["input_channels"],
+        "input_length": checkpoint_info["input_length"],
+    }
+    if model_type == "compact":
+        return CompactSeismicCNN(**kwargs)
+    return SeismicCNN(**kwargs)
+
+
+def create_model_metadata(model_path, output_dir, model, model_type, checkpoint_info):
     """
     Create metadata JSON file with model information.
     
@@ -76,13 +124,7 @@ def create_model_metadata(model_path, output_dir, model_type="compact"):
         output_dir: Directory to save metadata
         model_type: Type of model ("compact" or "standard")
     """
-    # Load model to get architecture info
-    if model_type == "compact":
-        model = CompactSeismicCNN(num_classes=3)
-        param_count = sum(p.numel() for p in model.parameters())
-    else:
-        model = SeismicCNN(num_classes=3)
-        param_count = sum(p.numel() for p in model.parameters())
+    param_count = sum(p.numel() for p in model.parameters())
     
     # Extract timestamp from model filename if available
     model_filename = Path(model_path).stem
@@ -92,11 +134,11 @@ def create_model_metadata(model_path, output_dir, model_type="compact"):
         "model_type": model_type,
         "architecture": model.__class__.__name__,
         "num_parameters": param_count,
-        "input_shape": [1, 500],  # channels, samples
-        "output_classes": 3,
-        "class_names": ["Noise", "Traffic", "Earthquake"],
-        "sampling_rate": 100,  # Hz
-        "window_duration": 5.0,  # seconds
+        "input_shape": [checkpoint_info["input_channels"], checkpoint_info["input_length"]],
+        "output_classes": checkpoint_info["num_classes"],
+        "class_names": checkpoint_info["class_names"],
+        "sampling_rate": DEFAULT_SAMPLING_RATE,  # Hz
+        "window_duration": checkpoint_info["input_length"] / DEFAULT_SAMPLING_RATE,
         "preprocessing": {
             "detrend": True,
             "bandpass_filter": {
@@ -199,7 +241,7 @@ def main():
     
     if args.export_all:
         # Find all trained models
-        trained_models_dir = project_root / "trained_models"
+        trained_models_dir = project_root / "models"
         if not trained_models_dir.exists():
             print(f"Error: {trained_models_dir} does not exist")
             return
@@ -215,10 +257,8 @@ def main():
             # Determine model type from filename
             if "compact" in model_path.stem.lower():
                 model_type = "compact"
-                model = CompactSeismicCNN(num_classes=3)
             else:
                 model_type = "standard"
-                model = SeismicCNN(num_classes=3)
             
             print(f"\n{'='*60}")
             print(f"Processing: {model_path.name}")
@@ -228,20 +268,25 @@ def main():
             # Load model weights
             try:
                 checkpoint = torch.load(model_path, map_location='cpu')
-                if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
-                    model.load_state_dict(checkpoint['model_state_dict'])
-                else:
-                    model.load_state_dict(checkpoint)
+                checkpoint_info = infer_checkpoint_info(checkpoint, model_type)
+                model = build_model(model_type, checkpoint_info)
+                model.load_state_dict(get_state_dict(checkpoint))
             except Exception as e:
                 print(f"Error loading model {model_path}: {e}")
                 continue
             
             # Export to ONNX
             onnx_path = output_dir / f"{model_path.stem}.onnx"
-            export_pytorch_to_onnx(model, onnx_path, model_path.stem)
+            export_pytorch_to_onnx(
+                model,
+                onnx_path,
+                model_path.stem,
+                checkpoint_info["input_channels"],
+                checkpoint_info["input_length"],
+            )
             
             # Create metadata
-            create_model_metadata(model_path, output_dir, model_type)
+            create_model_metadata(model_path, output_dir, model, model_type, checkpoint_info)
             
             # Generate conversion script
             generate_conversion_script(onnx_path, output_dir)
@@ -259,24 +304,23 @@ def main():
             print(f"Error: Model file not found: {model_path}")
             return
         
-        # Load model
-        if args.model_type == "compact":
-            model = CompactSeismicCNN(num_classes=3)
-        else:
-            model = SeismicCNN(num_classes=3)
-        
         checkpoint = torch.load(model_path, map_location='cpu')
-        if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
-            model.load_state_dict(checkpoint['model_state_dict'])
-        else:
-            model.load_state_dict(checkpoint)
+        checkpoint_info = infer_checkpoint_info(checkpoint, args.model_type)
+        model = build_model(args.model_type, checkpoint_info)
+        model.load_state_dict(get_state_dict(checkpoint))
         
         # Export to ONNX
         onnx_path = output_dir / f"{model_path.stem}.onnx"
-        export_pytorch_to_onnx(model, onnx_path, model_path.stem)
+        export_pytorch_to_onnx(
+            model,
+            onnx_path,
+            model_path.stem,
+            checkpoint_info["input_channels"],
+            checkpoint_info["input_length"],
+        )
         
         # Create metadata
-        create_model_metadata(model_path, output_dir, args.model_type)
+        create_model_metadata(model_path, output_dir, model, args.model_type, checkpoint_info)
         
         # Generate conversion script
         generate_conversion_script(onnx_path, output_dir)

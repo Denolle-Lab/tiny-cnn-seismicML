@@ -4,16 +4,19 @@ A lightweight PyTorch CNN for detecting and classifying seismic signals from Ras
 
 ## Overview
 
-This repository provides a compact convolutional neural network designed specifically for seismic signal classification. The model can distinguish between different types of seismic signals including background noise, traffic/urban signals, and earthquake events from Raspberry Shake seismometer data.
+This repository provides compact convolutional neural networks designed specifically for seismic signal classification. The notebooks support both the newer AK Network Noise/Earthquake workflow and the earlier rule-based Noise/Traffic/Earthquake workflow for Raspberry Shake seismometer data.
 
 ### Features
 
-- **Multi-Class Classification**: Distinguishes between Noise, Traffic, and Earthquake signals
+- **Flexible Classification**: Supports Noise/Earthquake AK datasets and Noise/Traffic/Earthquake rule-based datasets
 - **Lightweight Architecture**: Optimized for efficiency with minimal parameters
 - **Two Model Variants**:
   - `SeismicCNN`: Standard model with good performance (~100K parameters)
   - `CompactSeismicCNN`: Ultra-compact model for edge devices (~20K parameters)
 - **Complete Pipeline**: From data labeling to training to inference
+- **AK Network Workflow**: Downloads professional Alaska Seismic Network windows for training
+- **Browser Explainer**: React/TensorFlow.js app for explaining compact CNN predictions
+- **Deployable Weights Pattern**: `models/<model-id>/metadata.json` + `weights.json` for browser consumers such as CLUE
 - **Preprocessing Pipeline**: Built-in utilities for seismogram preprocessing
 - **Data Augmentation**: Support for training data augmentation
 - **Easy to Use**: Interactive Jupyter notebooks and command-line scripts
@@ -59,19 +62,30 @@ python -m ipykernel install --user --name=seismic-cnn
 
 The complete workflow consists of three main steps:
 
-1. **Label Data**: Use feature-based classification to create training labels
+1. **Label Data**: Download AK Noise/Earthquake windows or create rule-based labels
 2. **Train Model**: Train the CNN on labeled data
 3. **Predict**: Apply the trained model to new stations and time windows
 
 ### 1. Data Labeling
 
-Generate labeled training data using the feature-based classifier:
+Generate the current AK Network Noise/Earthquake training data:
+
+```bash
+jupyter notebook notebooks/02_labeling/download_AK_only_data.ipynb
+```
+
+This notebook:
+- Downloads earthquake and noise windows from the Alaska Seismic Network
+- Uses 60-second, 100 Hz single-channel windows
+- Saves `AK_waveforms_*`, `AK_labels_*`, and `AK_metadata_*` files to `notebooks/02_labeling/labeled_data/`
+
+For the earlier three-class rule-based workflow, use:
 
 ```bash
 jupyter notebook notebooks/02_labeling/multi_class_labeling.ipynb
 ```
 
-This notebook:
+That notebook:
 - Downloads seismograms from multiple Raspberry Shake stations
 - Extracts features (STA/LTA, kurtosis, spectral energy, etc.)
 - Applies rule-based classification to label windows as Noise, Traffic, or Earthquake
@@ -93,6 +107,7 @@ python train.py --save-dir models
 
 The training notebook provides:
 - Train/validation/test split (70/15/15)
+- Automatic handling of two-class or three-class datasets
 - Class-weighted loss for imbalanced data
 - Learning rate scheduling
 - Training and validation loss curves
@@ -129,7 +144,7 @@ START_TIME = "2024-11-27T17:00:00"  # UTC
 END_TIME = "2024-11-27T17:30:00"    # UTC (30 minutes)
 
 # Detection settings
-WINDOW_LENGTH_SEC = 5.0      # Must match training
+WINDOW_LENGTH_SEC = 60.0     # Must match training
 WINDOW_OVERLAP = 0.5         # 50% overlap
 CONFIDENCE_THRESHOLD = 0.5   # Minimum confidence for detection
 ```
@@ -165,6 +180,7 @@ Additional notebooks are organized by workflow stage in the `notebooks/` directo
 jupyter notebook notebooks/01_data_exploration/get_am_data.ipynb
 
 # Data labeling
+jupyter notebook notebooks/02_labeling/download_AK_only_data.ipynb
 jupyter notebook notebooks/02_labeling/multi_class_labeling.ipynb
 
 # Model training
@@ -187,7 +203,7 @@ from src.models import SeismicCNN, CompactSeismicCNN
 model = SeismicCNN(
     num_classes=3,        # Noise, Traffic, Earthquake
     input_channels=1,     # Single channel (Z component)
-    input_length=500,     # 5 seconds at 100 Hz
+    input_length=6000,    # 60 seconds at 100 Hz
     dropout_rate=0.3
 )
 
@@ -195,7 +211,7 @@ model = SeismicCNN(
 model_compact = CompactSeismicCNN(
     num_classes=3,
     input_channels=1,
-    input_length=500
+    input_length=6000
 )
 ```
 
@@ -203,13 +219,13 @@ model_compact = CompactSeismicCNN(
 
 #### SeismicCNN (Standard)
 
-- **Input**: 1-channel seismogram (Z component), length 500 samples (5 seconds at 100 Hz)
+- **Input**: 1-channel seismogram (Z component), length 6000 samples (60 seconds at 100 Hz)
 - **Architecture**:
   - 4 convolutional blocks with batch normalization and max pooling
   - Global average pooling
   - 2 fully connected layers
   - Dropout for regularization
-- **Output**: 3 class probabilities (Noise, Traffic, Earthquake)
+- **Output**: Class probabilities for the trained labels, usually Noise/Earthquake or Noise/Traffic/Earthquake
 - **Parameters**: ~100,000
 
 ### CompactSeismicCNN (Lightweight)
@@ -219,7 +235,7 @@ model_compact = CompactSeismicCNN(
   - 3 convolutional blocks (reduced filters)
   - Global average pooling
   - Single fully connected layer
-- **Output**: 3 class probabilities
+- **Output**: Class probabilities for the trained labels
 - **Parameters**: ~20,000
 
 ## Data Format
@@ -228,7 +244,7 @@ The model expects input data in the following format:
 
 - **Shape**: `(batch_size, num_channels, sequence_length)`
 - **Channels**: 1 (Z component of seismogram)
-- **Sequence Length**: 500 samples (5 seconds at 100 Hz, configurable)
+- **Sequence Length**: 6000 samples (60 seconds at 100 Hz, configurable)
 - **Sampling Rate**: 100 Hz (default)
 - **Window Overlap**: 50% overlap for sliding window predictions
 
@@ -251,7 +267,7 @@ stream.detrend('demean')
 stream.taper(max_percentage=0.05)
 
 # Extract windows
-window_length = 5.0  # seconds
+window_length = 60.0  # seconds
 overlap = 0.5        # 50%
 # ... (see examples for complete windowing code)
 ```
@@ -273,6 +289,10 @@ tiny-cnn-seismicML/
 ├── configs/
 │   ├── standard_config.yaml    # Standard model configuration
 │   └── compact_config.yaml     # Compact model configuration
+├── docs/
+│   ├── BROWSER_DEPLOYMENT.md
+│   └── generating-model-weights.md
+├── explainer-app/              # React + TensorFlow.js CNN explainer
 ├── notebooks/
 │   ├── 01_data_exploration/    # Explore seismic data
 │   ├── 02_labeling/            # Create labeled datasets
@@ -280,7 +300,12 @@ tiny-cnn-seismicML/
 │   ├── 03_training/            # Train CNN models
 │   └── 04_inference/           # Deploy models on new data
 │       └── predictions/        # Prediction results (created during inference)
-├── models/                     # Saved trained models (created during training)
+├── models/
+│   └── compact-v1/             # Example deployable TF.js model package
+├── scripts/
+│   ├── export_compact_weights_for_tfjs.py
+│   ├── export_to_browser.py
+│   └── export_waveforms_for_explainer.py
 ├── train.py                    # Command-line training script
 ├── predict.py                  # Command-line inference script
 ├── requirements.txt            # Dependencies
@@ -292,7 +317,7 @@ tiny-cnn-seismicML/
 The `notebooks/` directory follows a standard ML workflow:
 
 1. **`01_data_exploration/`** - Explore and understand seismic data
-2. **`02_labeling/`** - Create labeled training datasets using feature-based classification
+2. **`02_labeling/`** - Create labeled training datasets from AK downloads or rule-based features
 3. **`03_training/`** - Train CNN models on labeled data
 4. **`04_inference/`** - Apply trained models to continuous seismic data
 
@@ -305,8 +330,8 @@ Training configuration can be customized in YAML files. Key parameters:
 ```yaml
 model:
   type: 'standard'           # 'standard' or 'compact'
-  num_classes: 3
-  input_channels: 3
+  num_classes: 2             # AK Noise/Earthquake; use 3 for Noise/Traffic/Earthquake
+  input_channels: 1          # Vertical component
   input_length: 6000
   dropout_rate: 0.3
 
@@ -328,10 +353,15 @@ data:
 
 ## Classes
 
-The model classifies seismic signals into three categories:
+The current AK workflow classifies seismic signals into two categories:
 
 1. **Noise** (Class 0): Ambient background noise
-2. **Traffic** (Class 1): Anthropogenic/urban signals (e.g., traffic, human activity)
+2. **Earthquake** (Class 1 after remapping): Tectonic earthquake signals
+
+The rule-based labeling workflow can also train a three-class model:
+
+1. **Noise** (Class 0): Ambient background noise
+2. **Traffic** (Class 1): Anthropogenic/urban signals
 3. **Earthquake** (Class 2): Tectonic earthquake signals
 
 ### Classification Criteria

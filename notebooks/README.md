@@ -29,12 +29,12 @@ notebooks/
 ### 2. Data Labeling (`02_labeling/`)
 **Goal**: Create labeled training data for supervised learning
 
-- Extract features from seismic waveforms (STA/LTA, kurtosis, spectral energy)
-- Apply rule-based classification to label windows
-- Generate labeled datasets with 3 classes: Noise, Traffic, Earthquake
+- Download AK Network earthquake and noise windows for the current two-class workflow
+- Or extract features from seismic waveforms (STA/LTA, kurtosis, spectral energy) for the rule-based workflow
+- Generate labeled datasets with either 2 classes (Noise, Earthquake) or 3 classes (Noise, Traffic, Earthquake)
 - Save labeled data for model training
 
-**Key Notebook**: `multi_class_labeling.ipynb`
+**Key Notebooks**: `download_AK_only_data.ipynb`, `multi_class_labeling.ipynb`
 
 **Output**: `labeled_data/` directory with windowed waveforms and labels
 
@@ -79,6 +79,9 @@ For first-time users, follow this sequence:
 jupyter notebook 01_data_exploration/get_am_data.ipynb
 
 # 2. Create labeled training data
+jupyter notebook 02_labeling/download_AK_only_data.ipynb
+
+# Alternative: create rule-based three-class data
 jupyter notebook 02_labeling/multi_class_labeling.ipynb
 
 # 3. Train the model

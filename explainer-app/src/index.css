@@ -1,0 +1,259 @@
+/* --- Design tokens --- */
+:root {
+  --bg: #f6f8fa;
+  --bg-elevated: #ffffff;
+  --border: #d8dee4;
+  --border-subtle: #eaeef2;
+  --text: #1f2328;
+  --text-muted: #656d76;
+  --text-faint: #8c959f;
+  --accent: #0969da;
+  --accent-hover: #0550ae;
+  --accent-soft: #ddf4ff;
+  --card: #ffffff;
+  --purple: #8250df;
+  --purple-soft: #fbefff;
+  --green: #1a7f37;
+  --green-soft: #dafbe1;
+  --orange: #bf8700;
+  --red: #cf222e;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --max-content: 840px;
+  --space-section: 2.5rem;
+  --space-block: 1.5rem;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+  font-size: 1rem;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: clamp(16px, 4vw, 32px);
+}
+
+/* --- App header --- */
+.app-header {
+  text-align: center;
+  padding: clamp(28px, 5vw, 48px) 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 0;
+}
+
+.app-header h1 {
+  font-size: clamp(1.5rem, 4vw, 1.875rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+.app-header p {
+  color: var(--text-muted);
+  font-size: clamp(0.9rem, 2vw, 1rem);
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin-top: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.tab-btn:hover {
+  background: var(--bg);
+  border-color: var(--border);
+}
+
+.tab-btn.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* --- Sections and copy --- */
+.section {
+  background: var(--card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: clamp(20px, 4vw, 28px);
+  margin-top: var(--space-section);
+  box-shadow: var(--shadow);
+}
+
+.section h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text);
+}
+
+.section-desc {
+  color: var(--text-muted);
+  margin-bottom: var(--space-block);
+  font-size: 0.95rem;
+}
+
+.copy-block {
+  background: var(--card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: clamp(20px, 4vw, 28px);
+  margin-top: var(--space-section);
+  box-shadow: var(--shadow);
+}
+
+.copy-block h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.copy-block p,
+.copy-block ul {
+  margin-bottom: 12px;
+}
+
+.copy-block ul {
+  padding-left: 1.5rem;
+}
+
+.copy-block li {
+  margin-bottom: 8px;
+}
+
+.copy-block-figure {
+  margin: 1rem 0;
+  max-width: 100%;
+}
+
+.copy-block-figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+
+/* --- Glossary terms --- */
+.glossary-term {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+  text-underline-offset: 2px;
+  border-radius: 2px;
+}
+
+.glossary-term:hover {
+  color: var(--accent-hover);
+}
+
+/* --- Footer --- */
+.footer {
+  text-align: center;
+  padding: var(--space-section) 16px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  border-top: 1px solid var(--border-subtle);
+  margin-top: var(--space-section);
+}
+
+.footer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.footer a:hover {
+  text-decoration: underline;
+}
+
+/* --- Results section (many waveforms) --- */
+.results-section .results-grid {
+  display: grid;
+  gap: var(--space-block);
+  margin-top: 1rem;
+}
+
+.results-figure {
+  margin: 0;
+}
+
+.results-figure img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  display: block;
+}
+
+.results-figure figcaption {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+/* --- Responsive --- */
+@media (max-width: 640px) {
+  #root {
+    padding: 16px;
+  }
+
+  .section,
+  .copy-block {
+    padding: 18px;
+    margin-top: 1.5rem;
+  }
+
+  .app-header {
+    padding: 24px 16px;
+  }
+
+  .tab-btn {
+    padding: 8px 14px;
+    font-size: 0.85rem;
+  }
+}

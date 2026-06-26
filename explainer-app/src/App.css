@@ -1,0 +1,5 @@
+/* App-specific overrides; main styles in index.css */
+
+.app {
+  min-height: 100vh;
+}

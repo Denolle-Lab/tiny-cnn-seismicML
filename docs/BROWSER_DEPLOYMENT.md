@@ -51,7 +51,7 @@ PyTorch (Training) → ONNX (Intermediate) → TensorFlow.js (Browser)
 ┌─────────────────────────────────────────────────────────────┐
 │                   Export to ONNX                            │
 │  torch.onnx.export() → seismic_cnn_*.onnx                  │
-│  • Input: [batch, 1, 500]                                   │
+│  • Input: [batch, 1, 6000]                                  │
 │  • Output: [batch, 3] (Noise, Traffic, Earthquake)         │
 └────────────────────────┬────────────────────────────────────┘
                          │
@@ -112,7 +112,7 @@ python scripts/export_to_browser.py \
 
 **What this does**:
 1. Loads PyTorch model from `.pth` file
-2. Creates dummy input tensor (1, 1, 500)
+2. Creates dummy input tensor (1, 1, 6000)
 3. Exports to ONNX format with opset version 12
 4. Generates metadata JSON with model info
 5. Creates conversion script for next step
@@ -175,7 +175,7 @@ Test the converted model:
 ```javascript
 // In browser console
 const model = await tf.loadGraphModel('models/seismic_cnn_compact/model.json');
-const input = tf.zeros([1, 1, 500]);
+const input = tf.zeros([1, 1, 6000]);
 const output = model.predict(input);
 console.log(output.shape); // Should be [1, 3]
 ```
@@ -207,7 +207,7 @@ await classifier.loadModel('models/seismic_cnn_compact/model.json');
 
 **3. Prediction**
 ```javascript
-const waveform = new Float32Array(500); // 5 seconds at 100 Hz
+const waveform = new Float32Array(6000); // 60 seconds at 100 Hz
 const result = await classifier.predict(waveform);
 // result = {
 //     predictedClass: 2,

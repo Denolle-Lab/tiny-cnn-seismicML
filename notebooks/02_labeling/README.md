@@ -1,11 +1,21 @@
 # Data Labeling
 
-This directory contains notebooks for creating labeled training data using feature-based classification.
+This directory contains notebooks for creating labeled training data.
 
 ## Notebooks
 
+### `download_AK_only_data.ipynb`
+**Current AK workflow** - Creates a two-class Noise/Earthquake dataset from Alaska Seismic Network data.
+
+**Purpose**: Download professional seismic station windows for training the browser-compatible compact CNN
+**Input**: AK event/station data downloaded by the notebook
+**Output**:
+- `labeled_data/AK_waveforms_*.npy` - 60-second, 100 Hz waveform windows
+- `labeled_data/AK_labels_*.npy` - Class labels (0=Noise, 2=Earthquake before training remap)
+- `labeled_data/AK_metadata_*.csv` - Event and station metadata for each window
+
 ### `multi_class_labeling.ipynb`
-**Main labeling workflow** - Creates labeled training data for supervised learning.
+**Rule-based workflow** - Creates labeled training data for supervised learning.
 
 **Purpose**: Generate labeled datasets by applying rule-based feature classification
 **Input**: Raw seismic data from multiple stations
@@ -22,15 +32,16 @@ This directory contains notebooks for creating labeled training data using featu
 
 ## Workflow
 
-1. Run `multi_class_labeling.ipynb` to create labeled datasets
-2. Review the feature distributions and class balance
-3. Labeled data is saved to `labeled_data/` directory
+1. Run `download_AK_only_data.ipynb` for the current AK Noise/Earthquake dataset
+2. Or run `multi_class_labeling.ipynb` to create rule-based three-class datasets
+3. Review the feature distributions and class balance
+4. Labeled data is saved to `labeled_data/` directory
 
 ## Output Directory
 
 `labeled_data/` - Contains all labeled datasets with timestamps:
 - Windowed waveforms (numpy arrays)
-- Labels (0=Noise, 1=Traffic, 2=Earthquake)
+- Labels (`AK_*`: 0=Noise, 2=Earthquake before training remap; rule-based: 0=Noise, 1=Traffic, 2=Earthquake)
 - Metadata with extracted features
 
 ## Next Steps

@@ -19,8 +19,8 @@ class SeismicClassifier {
         this.metadata = null;
         this.classNames = ['Noise', 'Traffic', 'Earthquake'];
         this.samplingRate = 100; // Hz
-        this.windowDuration = 5.0; // seconds
-        this.expectedSamples = 500; // 5s * 100Hz
+        this.windowDuration = 60.0; // seconds
+        this.expectedSamples = 6000; // 60s * 100Hz
     }
 
     /**
@@ -44,6 +44,8 @@ class SeismicClassifier {
                 this.classNames = this.metadata.class_names || this.classNames;
                 this.samplingRate = this.metadata.sampling_rate || this.samplingRate;
                 this.windowDuration = this.metadata.window_duration || this.windowDuration;
+                this.expectedSamples = this.metadata.input_shape?.[1]
+                    || Math.round(this.windowDuration * this.samplingRate);
             }
 
             // Warm up the model with a dummy prediction

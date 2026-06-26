@@ -185,7 +185,7 @@ Then upload `seismic_data.json` to the browser demo!
 **Error**: "Input tensor shape mismatch"
 
 **Solution**:
-- Ensure data has exactly 500 samples (5 seconds at 100 Hz)
+- Ensure data has exactly the number of samples expected by the model metadata, usually 6000 samples (60 seconds at 100 Hz)
 - Check that data is numeric (not strings)
 - Verify sampling rate matches training data (100 Hz)
 
