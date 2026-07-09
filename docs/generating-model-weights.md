@@ -28,9 +28,22 @@ python scripts/export_compact_weights_for_tfjs.py \
 ```
 
 This writes `/tmp/export/compact_weights.json` in the same JSON format used by
-`weights.json`. The architecture in the script must match the trained model —
-`export_compact_weights_for_tfjs.py` targets the compact CNN; add a sibling
-exporter for other architectures.
+`weights.json`. The architecture in the script must match the trained model.
+There is one exporter per architecture:
+
+- `export_compact_weights_for_tfjs.py` — compact CNN (writes `compact_weights.json`)
+- `export_standard_weights_for_tfjs.py` — standard CNN, 4 conv blocks + 2 dense
+  layers (writes `standard_weights.json`)
+
+For the standard model:
+
+```bash
+python scripts/export_standard_weights_for_tfjs.py \
+  --model_path models/seismic_cnn_standard_<...>.pth \
+  --output_dir /tmp/export
+```
+
+Add a new sibling exporter for any further architectures.
 
 ## 3. Assemble the model folder
 
@@ -64,7 +77,7 @@ error.
 
 - **Reusing `compact` or `standard`:** just set the field — no application changes are
   needed — and use the matching exporter (`export_compact_weights_for_tfjs.py` for
-  `compact`).
+  `compact`, `export_standard_weights_for_tfjs.py` for `standard`).
 - **A genuinely new architecture** requires three pieces that must agree:
   1. A TF.js build function added and registered in CLUE's `ARCHITECTURES` map,
      mirroring the trained model's layers.
