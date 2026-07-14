@@ -29,6 +29,8 @@ sys.path.insert(0, str(REPO_ROOT))
 # Import only the cnn module to avoid pulling in scipy etc.
 import importlib.util
 spec = importlib.util.spec_from_file_location("cnn", REPO_ROOT / "src" / "models" / "cnn.py")
+if spec is None or spec.loader is None:
+    raise ImportError("Failed to load src/models/cnn.py (importlib spec/loader is missing).")
 cnn = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(cnn)
 SeismicCNN = cnn.SeismicCNN
