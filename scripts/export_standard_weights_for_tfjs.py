@@ -47,7 +47,10 @@ def find_latest_standard_checkpoint() -> Optional[Path]:
 def export_weights(model_path: Path, output_path: Path) -> None:
     """Load standard SeismicCNN model and export weights as JSON for TF.js."""
     device = torch.device("cpu")
-    checkpoint = torch.load(model_path, map_location=device)
+    try:
+         checkpoint = torch.load(model_path, map_location=device, weights_only=True)
+    except TypeError:
+         checkpoint = torch.load(model_path, map_location=device)
     if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
         state = checkpoint["model_state_dict"]
     else:
@@ -55,6 +58,13 @@ def export_weights(model_path: Path, output_path: Path) -> None:
 
     # Infer shapes from the checkpoint so we don't rely on class defaults:
     #   fc2.weight is (num_classes, 64); conv1.weight is (out, in_channels, k).
+
+    required = ["fc2.weight", "conv1.weight"]
+    missing = [k for k in required if k not in state]
+    if missing:
+        print(f"Checkpoint is missing required keys: {missing}. Is this a SeismicCNN checkpoint?")
+        sys.exit(1)
+       
     num_classes = int(state["fc2.weight"].shape[0])
     input_channels = int(state["conv1.weight"].shape[1])
     model = SeismicCNN(num_classes=num_classes, input_channels=input_channels, input_length=6000)
