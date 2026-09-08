@@ -1,8 +1,11 @@
 # Plan: four-class models for the SeismicML classroom deployment
 
-Status: proposal, September 2026. Owner: Marine Denolle. No student is
-assigned; the plan is sized for one person working part time with the
-existing pipeline, and it names the fallback at each step.
+Status: September 2026. Owner: Marine Denolle. No student is assigned;
+the plan is sized for one person working part time, and it names the
+fallback at each step. The scripted pipeline described in sections 3-5
+now exists (see [multiclass-pipeline.md](multiclass-pipeline.md)); what
+remains is running it against the catalogs, reviewing the windows, and
+the Concord meeting to fix the class list.
 
 ## 1. Where we are
 
@@ -113,9 +116,9 @@ Record the counts in this file. They decide the class list.
 
 ### 3.2 One labeling script instead of per-class notebooks
 
-Refactor `notebooks/02_labeling/download_AK_only_data.ipynb` into
-`scripts/build_dataset.py` with a `--class` argument that maps a ComCat
-`eventtype` to a label. Keep everything that works today:
+Done: `scripts/build_dataset.py` takes `--class` and maps it to ComCat
+`eventtype` values through `configs/classes.json`. It keeps everything
+that worked in the notebook:
 
 - 100 Hz, vertical component, bandpass 2-20 Hz, per-window
   z-normalization.

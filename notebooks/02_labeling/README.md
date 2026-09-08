@@ -2,7 +2,17 @@
 
 This directory contains notebooks for creating labeled training data.
 
+For more than two classes use the scripts instead: `scripts/build_dataset.py`
+writes one run per class into `labeled_data/runs/`, `review_windows.ipynb`
+(here) pages through a run and records windows to drop, and
+`scripts/merge_datasets.py` combines runs into a training set. See
+`docs/multiclass-pipeline.md`.
+
 ## Notebooks
+
+### `review_windows.ipynb`
+**Curation** - Browse the windows of a `build_dataset.py` run, write `exclude.txt`
+with the indexes to drop, and compare median spectra per class.
 
 ### `download_AK_only_data.ipynb`
 **Current AK workflow** - Creates a two-class Noise/Earthquake dataset from Alaska Seismic Network data.

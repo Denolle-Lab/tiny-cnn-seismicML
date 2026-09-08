@@ -9,6 +9,19 @@ A deployable model is a folder `models/<model-id>/` containing two files:
 This guide covers producing those files. `compact-v1` was created this way (see
 [models/compact-v1/README.md](../models/compact-v1/README.md) for its provenance).
 
+## Short path (scripted, any number of classes)
+
+```bash
+python scripts/train_multiclass.py --dataset notebooks/02_labeling/labeled_data/dataset_4class_<ts>
+python scripts/package_model.py --checkpoint models/seismic_cnn_standard_<...>.pth --model-id standard-v2
+```
+
+`package_model.py` does steps 2 and 3 below in one go: it reads the class
+names, architecture, sampling rate and window length from the checkpoint,
+writes `weights.json` and `metadata.json`, and adds a README with the test
+confusion matrix. See [multiclass-pipeline.md](multiclass-pipeline.md) for
+how the dataset directory is built. The manual path follows.
+
 ## 1. Train a model
 
 Run the training notebook to produce a PyTorch checkpoint:
@@ -58,6 +71,12 @@ template for the fields; the metadata format is defined by the consuming
 application (CLUE's `ModelMetadata`, referenced via the `$schema` URL in that file).
 Bump `id` (e.g. `compact-v2`) when retraining so events keyed on the old id remain
 valid.
+
+`instrument_types` holds SEED *instrument* codes (the second letter of the
+channel code): `H` for broadband BHZ/HHZ and for Raspberry Shake EHZ alike,
+`L` for low-gain. It is not the band code, so `"B"` is not a valid value.
+`class_names` must list the model outputs in order and use the exact string
+`"Noise"` for the noise class; CLUE excludes that class when creating events.
 
 ## 4. Use the model
 

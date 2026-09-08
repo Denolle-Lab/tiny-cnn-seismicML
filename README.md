@@ -58,6 +58,27 @@ python -m ipykernel install --user --name=seismic-cnn
 
 ## Quick Start
 
+### Scripted multi-class pipeline (recommended for new models)
+
+Build any number of classes from verified USGS ComCat event types
+(earthquake, quarry blast, ice quake, ...), train with an event-level
+split, and package for CLUE, all from the command line:
+
+```bash
+python scripts/inventory_event_types.py                          # what exists in the region
+python scripts/build_dataset.py --class Earthquake --network AK  # one run per class
+python scripts/build_dataset.py --class Blast      --network AK
+python scripts/merge_datasets.py notebooks/02_labeling/labeled_data/runs/* --out .../dataset_4class
+python scripts/train_multiclass.py --dataset .../dataset_4class
+python scripts/package_model.py --checkpoint models/seismic_cnn_standard_<...>.pth --model-id standard-v2
+```
+
+See [docs/multiclass-pipeline.md](docs/multiclass-pipeline.md) for each
+step and [docs/multiclass-model-plan.md](docs/multiclass-model-plan.md)
+for the class choices. `python tests/test_pipeline.py` exercises the whole
+chain offline on synthetic data. The notebook workflow below still works
+for the two-class case.
+
 ### Workflow Overview
 
 The complete workflow consists of three main steps:
@@ -291,7 +312,9 @@ tiny-cnn-seismicML/
 │   └── compact_config.yaml     # Compact model configuration
 ├── docs/
 │   ├── BROWSER_DEPLOYMENT.md
-│   └── generating-model-weights.md
+│   ├── generating-model-weights.md
+│   ├── multiclass-pipeline.md      # scripted build -> train -> package how-to
+│   └── multiclass-model-plan.md    # class choices, fixes, timeline
 ├── explainer-app/              # React + TensorFlow.js CNN explainer
 ├── notebooks/
 │   ├── 01_data_exploration/    # Explore seismic data
@@ -303,9 +326,17 @@ tiny-cnn-seismicML/
 ├── models/
 │   └── compact-v1/             # Example deployable TF.js model package
 ├── scripts/
+│   ├── inventory_event_types.py    # ComCat counts per event type
+│   ├── build_dataset.py            # one labeled run per class from catalog events
+│   ├── merge_datasets.py           # combine runs, apply review exclusions, cap classes
+│   ├── train_multiclass.py         # event-level split, compact + standard, metrics
+│   ├── package_model.py            # checkpoint -> models/<id>/{metadata,weights}.json
 │   ├── export_compact_weights_for_tfjs.py
+│   ├── export_standard_weights_for_tfjs.py
 │   ├── export_to_browser.py
 │   └── export_waveforms_for_explainer.py
+├── tests/
+│   └── test_pipeline.py            # offline end-to-end test on synthetic data
 ├── train.py                    # Command-line training script
 ├── predict.py                  # Command-line inference script
 ├── requirements.txt            # Dependencies

@@ -1,0 +1,27 @@
+{
+  "_comment": "Canonical class list for the multi-class classroom models. Index 0 must be Noise (CLUE treats the exact string 'Noise' specially). 'sources' maps a class to the USGS ComCat eventtype values used to find verified events; Noise has no source because noise windows are cut from the pre-onset part of every event trace.",
+  "classes": ["Noise", "Earthquake", "Blast", "Ice quake"],
+  "sources": {
+    "Earthquake": {"eventtype": ["earthquake"], "min_magnitude": 2.5, "max_magnitude": 9.0},
+    "Blast": {"eventtype": ["quarry blast", "explosion"], "min_magnitude": 1.0, "max_magnitude": 9.0},
+    "Ice quake": {"eventtype": ["ice quake"], "min_magnitude": 1.0, "max_magnitude": 9.0},
+    "Landslide": {"eventtype": ["landslide", "avalanche"], "min_magnitude": 1.0, "max_magnitude": 9.0},
+    "Volcanic": {"eventtype": ["volcanic eruption"], "min_magnitude": 1.0, "max_magnitude": 9.0}
+  },
+  "window": {
+    "sampling_rate": 100,
+    "lowcut_hz": 2.0,
+    "highcut_hz": 20.0,
+    "event_pre_sec": 30.0,
+    "event_post_sec": 90.0,
+    "noise_pre_sec": 90.0,
+    "noise_end_sec": 30.0,
+    "train_len_sec": 60.0
+  },
+  "region": {
+    "name": "Anchorage, Alaska",
+    "center_lat": 61.2181,
+    "center_lon": -149.9003,
+    "max_station_distance_km": 150
+  }
+}
