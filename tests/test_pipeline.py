@@ -96,6 +96,19 @@ def test_event_level_split_has_no_leak():
         assert not (set(ids[m[a]]) & set(ids[m[b]])), f"event overlap between {a} and {b}"
     assert m["val"].any() and m["test"].any()
 
+    # stratified: a class with only 4 events must still reach val and test
+    labels = np.zeros(len(ids), int)
+    rare = [f"e{i}" for i in range(4)]
+    labels[np.isin(ids, rare)] = 3
+    labels[~np.isin(ids, rare) & (np.arange(len(ids)) % 3 == 0)] = 1
+    ms = event_level_split(ids, (0.7, 0.15, 0.15), seed=3, strata=labels)
+    for name in ("train", "val", "test"):
+        assert (labels[ms[name]] == 3).any(), f"rare class missing from {name}"
+        ev_in = set(ids[ms[name]])
+        for other in ("train", "val", "test"):
+            if other != name:
+                assert not (ev_in & set(ids[ms[other]]))
+
 
 def test_expand_crops():
     X = [np.random.randn(12000).astype(np.float32), np.random.randn(6000).astype(np.float32)]
@@ -131,6 +144,9 @@ def test_end_to_end(tmp_root=None):
     metrics = json.load(open(sorted(out.glob("metrics_standard_*.json"))[-1]))
     assert metrics["classes"] == CLASSES and len(metrics["confusion"]) == 4
     assert "AK" in metrics["by_network"] and "AM" in metrics["by_network"]
+    assert all(r == r for r in metrics["test_recall"]), \
+        f"a class is missing from the test split: {metrics['test_recall']}"
+    assert sum(sum(row) for row in metrics["confusion"]) == metrics["n_test"]
     print("  synthetic test accuracy (standard):", round(metrics["test_accuracy"], 3),
           "recall:", [round(x, 2) for x in metrics["test_recall"]])
 

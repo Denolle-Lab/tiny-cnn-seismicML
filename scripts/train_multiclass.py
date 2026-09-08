@@ -161,7 +161,7 @@ def main():
     group = meta["event_id"].astype(str).values if "event_id" in meta.columns else np.arange(len(y))
     if "event_id" not in meta.columns:
         print("WARNING: metadata has no event_id; falling back to a per-window split (leaky).")
-    masks = event_level_split(group, ratios, seed=args.seed)
+    masks = event_level_split(group, ratios, seed=args.seed, strata=y)
 
     splits = {}
     for k, (name, m) in enumerate(masks.items()):

@@ -213,30 +213,49 @@ def merge_datasets(dirs: Iterable[Path], classes: Sequence[str],
 # Splitting and cropping
 # ---------------------------------------------------------------------------
 
+def _split_groups(uniq: np.ndarray, counts: np.ndarray, ratios, rng) -> dict:
+    """Shuffle groups and cut them into 3 splits by cumulative window count,
+    forcing at least one group into val and test when there are >= 3 groups."""
+    order = rng.permutation(len(uniq))
+    uniq, counts = uniq[order], counts[order]
+    cum = np.cumsum(counts) / counts.sum()
+    split = np.where(cum <= ratios[0], 0, np.where(cum <= ratios[0] + ratios[1], 1, 2))
+    if len(uniq) >= 3:
+        for s in (1, 2):
+            if not (split == s).any():
+                split[-s] = s
+    return dict(zip(uniq.tolist(), split.tolist()))
+
+
 def event_level_split(event_ids: Sequence, ratios=(0.7, 0.15, 0.15), seed: int = 42,
-                      group_key: Optional[Sequence] = None) -> dict:
+                      group_key: Optional[Sequence] = None,
+                      strata: Optional[Sequence] = None) -> dict:
     """Assign every window to train/val/test so that all windows of one event
     (all stations, the event window and its noise window) land in the same
     split. Returns {"train": mask, "val": mask, "test": mask}.
 
-    ``group_key`` can override the grouping (e.g. event_id + network).
+    ``group_key`` overrides the grouping (e.g. event_id + network).
+    ``strata`` (per-window labels) makes the split stratified at the event
+    level: each event is assigned to the highest label it carries (its
+    event class, since Noise is 0), and each class is split separately, so
+    a small class still appears in val and test.
     """
     if abs(sum(ratios) - 1.0) > 1e-6:
         raise ValueError("ratios must sum to 1")
     keys = np.asarray(group_key if group_key is not None else event_ids)
-    uniq, counts = np.unique(keys, return_counts=True)
     rng = np.random.default_rng(seed)
-    order = rng.permutation(len(uniq))
-    uniq, counts = uniq[order], counts[order]
-    total = counts.sum()
-    cum = np.cumsum(counts) / total
-    split_of_event = np.where(cum <= ratios[0], 0,
-                              np.where(cum <= ratios[0] + ratios[1], 1, 2))
-    # Guarantee each split has at least one event when there are enough events
-    for s in (1, 2):
-        if len(uniq) >= 3 and not (split_of_event == s).any():
-            split_of_event[-s] = s
-    event_to_split = dict(zip(uniq.tolist(), split_of_event.tolist()))
+    event_to_split: dict = {}
+
+    if strata is None:
+        uniq, counts = np.unique(keys, return_counts=True)
+        event_to_split = _split_groups(uniq, counts, ratios, rng)
+    else:
+        strata = np.asarray(strata)
+        df = pd.DataFrame({"key": keys, "label": strata})
+        per_event = df.groupby("key")["label"].agg(["max", "size"])
+        for _, sub in per_event.groupby("max"):
+            event_to_split.update(_split_groups(sub.index.to_numpy(), sub["size"].to_numpy(), ratios, rng))
+
     assign = np.array([event_to_split[k] for k in keys.tolist()])
     return {"train": assign == 0, "val": assign == 1, "test": assign == 2}
 
