@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader, random_split
 import numpy as np
 
 from src.models import get_model
-from src.data import SeismicDataset, DataAugmentation
+from src.data import SeismicDataset, DataAugmentation, class_subset, classes_from_config, global_labels, select_classes
 from src.utils import Trainer, get_optimizer, get_scheduler
 
 
@@ -23,15 +23,30 @@ def load_config(config_path):
     return config
 
 
-def create_dummy_data(num_samples=1000, num_channels=3, seq_length=6000, num_classes=3):
+def create_dummy_data(num_samples=1000, num_channels=3, seq_length=6000, classes='earthquake'):
     """
     Create dummy data for testing/demonstration.
-    
-    Replace this with actual data loading from files.
+
+    Labels are drawn from the global label integers of ``classes`` so the
+    output goes through the same ``select_classes`` remap as real data.
     """
     waveforms = np.random.randn(num_samples, num_channels, seq_length).astype(np.float32)
-    labels = np.random.randint(0, num_classes, num_samples)
+    labels = np.random.choice(global_labels(classes), num_samples)
     return waveforms, labels
+
+
+def load_labeled_arrays(waveforms_path, labels_path):
+    """Load ``*_waveforms_*.npy`` / ``*_labels_*.npy`` written by notebooks/02_labeling."""
+    waveforms = np.load(waveforms_path, allow_pickle=True)
+    labels = np.load(labels_path)
+    if waveforms.dtype == object:
+        raise ValueError(
+            f'{waveforms_path} holds variable-length windows; crop them to a fixed '
+            'length first (notebooks/03_training/train_cnn_multiclass.ipynb does this).'
+        )
+    if waveforms.ndim == 2:  # (N, L) single channel -> (N, 1, L)
+        waveforms = waveforms[:, np.newaxis, :]
+    return waveforms.astype(np.float32), labels
 
 
 def main(args):
@@ -45,7 +60,7 @@ def main(args):
         config = {
             'model': {
                 'type': 'standard',
-                'num_classes': 3,
+                'classes': 'earthquake',
                 'input_channels': 3,
                 'input_length': 6000,
                 'dropout_rate': 0.3
@@ -76,15 +91,33 @@ def main(args):
         device = torch.device('cpu')
         print('Using device: CPU')
     
-    # Create or load data
-    # TODO: Replace with actual data loading
+    # Resolve the class subset this model separates (see src/data/labels.py).
+    # 'classes' is the source of truth; a legacy 'num_classes' is accepted.
+    model_cfg = config['model']
+    classes = classes_from_config(model_cfg)
+    class_names = class_subset(classes)
+    num_classes = len(class_names)
+    print(f'Classes ({num_classes}): {class_names}')
+
+    # Load labeled arrays if the config names them, else dummy data
     print('Loading data...')
-    waveforms, labels = create_dummy_data(
-        num_samples=config.get('num_samples', 1000),
-        num_channels=config['model']['input_channels'],
-        seq_length=config['model']['input_length'],
-        num_classes=config['model']['num_classes']
-    )
+    data_cfg = config['data']
+    if data_cfg.get('waveforms') and data_cfg.get('labels'):
+        waveforms, labels = load_labeled_arrays(data_cfg['waveforms'], data_cfg['labels'])
+        print(f'Loaded {len(labels)} windows from {data_cfg["waveforms"]}')
+    else:
+        print('No data.waveforms/data.labels in config; using dummy data')
+        waveforms, labels = create_dummy_data(
+            num_samples=config.get('num_samples', 1000),
+            num_channels=model_cfg['input_channels'],
+            seq_length=model_cfg['input_length'],
+            classes=classes
+        )
+
+    # Drop windows outside the subset and remap labels to 0..num_classes-1
+    waveforms, labels, class_names = select_classes(waveforms, labels, classes)
+    counts = np.bincount(labels, minlength=num_classes)
+    print('Windows per class: ' + ', '.join(f'{n}={c}' for n, c in zip(class_names, counts)))
     
     # Create augmentation if enabled
     transform = None
@@ -119,11 +152,11 @@ def main(args):
     # Create model
     print('Creating model...')
     model = get_model(
-        model_type=config['model']['type'],
-        num_classes=config['model']['num_classes'],
-        input_channels=config['model']['input_channels'],
-        input_length=config['model']['input_length'],
-        dropout_rate=config['model'].get('dropout_rate', 0.3)
+        model_type=model_cfg['type'],
+        num_classes=num_classes,
+        input_channels=model_cfg['input_channels'],
+        input_length=model_cfg['input_length'],
+        dropout_rate=model_cfg.get('dropout_rate', 0.3)
     )
     
     model = model.to(device)

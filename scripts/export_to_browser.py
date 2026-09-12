@@ -25,8 +25,11 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from src.models.cnn import SeismicCNN, CompactSeismicCNN
+from src.data.labels import MODEL_CLASSES
 
-DEFAULT_CLASS_NAMES = ["Noise", "Traffic", "Earthquake"]
+# Fallback when a checkpoint has no class_names (raw state dicts): the
+# deployed two-class model, else the old three-class rule-based order.
+DEFAULT_CLASS_NAMES = MODEL_CLASSES['rule_based']
 DEFAULT_SAMPLING_RATE = 100
 DEFAULT_INPUT_LENGTH = 6000
 
@@ -93,7 +96,7 @@ def infer_checkpoint_info(checkpoint, model_type):
     if input_length is None:
         input_length = DEFAULT_INPUT_LENGTH
     if class_names is None:
-        class_names = ["Noise", "Earthquake"] if num_classes == 2 else DEFAULT_CLASS_NAMES[:num_classes]
+        class_names = MODEL_CLASSES['earthquake'] if num_classes == 2 else DEFAULT_CLASS_NAMES[:num_classes]
 
     return {
         "num_classes": int(num_classes),

@@ -8,7 +8,7 @@ This repository provides compact convolutional neural networks designed specific
 
 ### Features
 
-- **Flexible Classification**: Supports Noise/Earthquake AK datasets and Noise/Traffic/Earthquake rule-based datasets
+- **Flexible Classification**: One on-disk label scheme (`src/data/labels.py`), per-model class subsets (earthquake-only today; Natural and Human models planned)
 - **Lightweight Architecture**: Optimized for efficiency with minimal parameters
 - **Two Model Variants**:
   - `SeismicCNN`: Standard model with good performance (~100K parameters)
@@ -107,7 +107,7 @@ python train.py --save-dir models
 
 The training notebook provides:
 - Train/validation/test split (70/15/15)
-- Automatic handling of two-class or three-class datasets
+- Per-model class subset (`MODEL_CLASSES_KEY`): drops windows outside the subset and remaps labels to contiguous indices
 - Class-weighted loss for imbalanced data
 - Learning rate scheduling
 - Training and validation loss curves
@@ -201,7 +201,7 @@ from src.models import SeismicCNN, CompactSeismicCNN
 
 # Standard model (default)
 model = SeismicCNN(
-    num_classes=3,        # Noise, Traffic, Earthquake
+    num_classes=3,        # len(class_names) from select_classes, e.g. Noise, Earthquake, Avalanche
     input_channels=1,     # Single channel (Z component)
     input_length=6000,    # 60 seconds at 100 Hz
     dropout_rate=0.3
@@ -330,7 +330,7 @@ Training configuration can be customized in YAML files. Key parameters:
 ```yaml
 model:
   type: 'standard'           # 'standard' or 'compact'
-  num_classes: 2             # AK Noise/Earthquake; use 3 for Noise/Traffic/Earthquake
+  classes: 'earthquake'      # key of src.data.MODEL_CLASSES or a list of class names
   input_channels: 1          # Vertical component
   input_length: 6000
   dropout_rate: 0.3
@@ -344,6 +344,8 @@ training:
   early_stopping_patience: 10
 
 data:
+  waveforms: notebooks/02_labeling/labeled_data/AK_waveforms_<stamp>.npy  # optional
+  labels: notebooks/02_labeling/labeled_data/AK_labels_<stamp>.npy        # optional
   val_split: 0.2
   use_augmentation: true
   sampling_rate: 100.0
@@ -351,18 +353,43 @@ data:
   highcut: 45.0
 ```
 
+`num_classes` is derived from `classes`. Without `data.waveforms`/`data.labels`, `train.py` trains on dummy data.
+
 ## Classes
 
-The current AK workflow classifies seismic signals into two categories:
+### Label scheme on disk
 
-1. **Noise** (Class 0): Ambient background noise
-2. **Earthquake** (Class 1 after remapping): Tectonic earthquake signals
+Every labeling notebook writes one global integer per window to `*_labels_*.npy`. The scheme lives in one place, `src/data/labels.py` (`LABEL_MAP`), and is append-only: 0, 1 and 2 are already on disk and never change.
 
-The rule-based labeling workflow can also train a three-class model:
+| Label | Class | Status |
+|---|---|---|
+| 0 | Noise | on disk (AK and rule-based) |
+| 1 | Traffic | on disk (rule-based Raspberry Shake), port tracked in [#12](https://github.com/Denolle-Lab/tiny-cnn-seismicML/issues/12) |
+| 2 | Earthquake | on disk (AK, P-arrival windows) |
+| 3 | Avalanche | collection tracked in [#9](https://github.com/Denolle-Lab/tiny-cnn-seismicML/issues/9) |
+| 4 | Train | collection tracked in [#10](https://github.com/Denolle-Lab/tiny-cnn-seismicML/issues/10) |
+| 5 | Aircraft | feasibility tracked in [#11](https://github.com/Denolle-Lab/tiny-cnn-seismicML/issues/11) |
 
-1. **Noise** (Class 0): Ambient background noise
-2. **Traffic** (Class 1): Anthropogenic/urban signals
-3. **Earthquake** (Class 2): Tectonic earthquake signals
+### Per-model class subsets
+
+A trained model separates a subset of these classes. `select_classes(X, y, key)` keeps only windows in the subset and remaps their labels to contiguous output indices 0..K-1, so `CrossEntropyLoss`, the checkpoint's `class_names`, and `models/<id>/metadata.json` all agree. Noise is always output index 0. Subsets are named in `MODEL_CLASSES`:
+
+| Key | Output classes | Use |
+|---|---|---|
+| `earthquake` | Noise / Earthquake | deployed today (`models/compact-v2`, `models/standard-v1`) |
+| `natural` | Noise / Earthquake / Avalanche | CLUE WaveRunner "Natural" model |
+| `human` | Noise / Train / Aircraft | CLUE WaveRunner "Human" model |
+| `human_traffic` | Noise / Traffic / Train / Aircraft | Human model with the rule-based traffic class |
+| `rule_based` | Noise / Traffic / Earthquake | earlier three-class Raspberry Shake experiment |
+
+Pick the subset with `MODEL_CLASSES_KEY` in `notebooks/03_training/train_cnn_multiclass.ipynb` or `model.classes` in a config YAML. The roadmap for the Natural and Human models is [#13](https://github.com/Denolle-Lab/tiny-cnn-seismicML/issues/13).
+
+```python
+from src.data import select_classes, LABEL_MAP
+
+X, y, class_names = select_classes(X, y, 'natural')
+# class_names == ['Noise', 'Earthquake', 'Avalanche']; y in {0, 1, 2}
+```
 
 ### Classification Criteria
 
