@@ -37,13 +37,14 @@ def create_dummy_data(num_samples=1000, num_channels=3, seq_length=6000, classes
 
 def load_labeled_arrays(waveforms_path, labels_path):
     """Load ``*_waveforms_*.npy`` / ``*_labels_*.npy`` written by notebooks/02_labeling."""
-    waveforms = np.load(waveforms_path, allow_pickle=True)
-    labels = np.load(labels_path)
-    if waveforms.dtype == object:
+    try:
+        waveforms = np.load(waveforms_path)
+    except ValueError as err:  # object array: ragged windows pickled by the AK notebook
         raise ValueError(
             f'{waveforms_path} holds variable-length windows; crop them to a fixed '
             'length first (notebooks/03_training/train_cnn_multiclass.ipynb does this).'
-        )
+        ) from err
+    labels = np.load(labels_path)
     if waveforms.ndim == 2:  # (N, L) single channel -> (N, 1, L)
         waveforms = waveforms[:, np.newaxis, :]
     return waveforms.astype(np.float32), labels
@@ -187,7 +188,14 @@ def main(args):
         criterion=criterion,
         optimizer=optimizer,
         device=device,
-        save_dir=args.save_dir
+        save_dir=args.save_dir,
+        metadata={
+            'model_type': model_cfg['type'],
+            'class_names': class_names,
+            'num_classes': num_classes,
+            'input_channels': model_cfg['input_channels'],
+            'input_length': model_cfg['input_length'],
+        }
     )
     
     # Train
