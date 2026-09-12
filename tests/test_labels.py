@@ -78,3 +78,13 @@ def test_classes_from_config_prefers_classes_and_maps_legacy_num_classes():
     assert labels.class_subset(labels.classes_from_config({'num_classes': 2})) == ['Noise', 'Earthquake']
     assert labels.class_subset(labels.classes_from_config({'num_classes': 3})) == ['Noise', 'Traffic', 'Earthquake']
     assert labels.class_subset(labels.classes_from_config({})) == ['Noise', 'Earthquake']
+
+
+def test_select_classes_vectorized_remap_matches_lookup():
+    rng = np.random.default_rng(0)
+    y = rng.choice([0, 1, 2, 3, 4, 5], size=10_000)
+    X = np.zeros((len(y), 1))
+    _, ys, names = labels.select_classes(X, y, 'human_traffic')
+    expect = {0: 0, 1: 1, 4: 2, 5: 3}
+    assert ys.tolist() == [expect[int(v)] for v in y if int(v) in expect]
+    assert names == ['Noise', 'Traffic', 'Train', 'Aircraft']

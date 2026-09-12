@@ -31,15 +31,21 @@ def create_dummy_data(num_samples=1000, num_channels=3, seq_length=6000, classes
     output goes through the same ``select_classes`` remap as real data.
     """
     waveforms = np.random.randn(num_samples, num_channels, seq_length).astype(np.float32)
-    labels = np.random.choice(global_labels(classes), num_samples)
-    return waveforms, labels
+    wanted = np.array(global_labels(classes))
+    # One guaranteed window per class so select_classes never sees an empty class
+    labels = np.concatenate([wanted, np.random.choice(wanted, max(num_samples - len(wanted), 0))])
+    np.random.shuffle(labels)
+    return waveforms, labels[:num_samples]
 
 
 def load_labeled_arrays(waveforms_path, labels_path):
     """Load ``*_waveforms_*.npy`` / ``*_labels_*.npy`` written by notebooks/02_labeling."""
     try:
         waveforms = np.load(waveforms_path)
-    except ValueError as err:  # object array: ragged windows pickled by the AK notebook
+    except ValueError as err:
+        if 'allow_pickle' not in str(err):
+            raise
+        # Object array: ragged windows pickled by the AK notebook
         raise ValueError(
             f'{waveforms_path} holds variable-length windows; crop them to a fixed '
             'length first (notebooks/03_training/train_cnn_multiclass.ipynb does this).'

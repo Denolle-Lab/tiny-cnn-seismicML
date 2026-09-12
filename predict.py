@@ -41,10 +41,18 @@ class SeismicClassifier:
                 }
             }
         
-        # Load weights first: notebook checkpoints carry class_names, which
-        # is the model's output order (see src/data/labels.py).
+        # Load weights first: checkpoints from train.py and the training
+        # notebook carry class_names (the model's output order, see
+        # src/data/labels.py) plus model_type / input shape. Those describe
+        # the saved weights, so they override the config where present.
         checkpoint = torch.load(model_path, map_location=self.device)
-        model_cfg = self.config['model']
+        model_cfg = dict(self.config['model'])
+        if isinstance(checkpoint, dict):
+            if checkpoint.get('model_type'):
+                model_cfg['type'] = checkpoint['model_type']
+            for key in ('input_channels', 'input_length'):
+                if checkpoint.get(key) is not None:
+                    model_cfg[key] = int(checkpoint[key])
         if isinstance(checkpoint, dict) and checkpoint.get('class_names'):
             self.class_names = list(checkpoint['class_names'])
         else:

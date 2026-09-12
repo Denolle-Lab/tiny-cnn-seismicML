@@ -134,10 +134,11 @@ def select_classes(waveforms, labels, classes, allow_missing=False):
     labels = np.asarray(labels)
     names = class_subset(classes)
     wanted = global_labels(names)
-    remap = {g: i for i, g in enumerate(wanted)}
 
     mask = np.isin(labels, wanted)
-    y_new = np.array([remap[int(v)] for v in labels[mask]], dtype=np.int64)
+    lut = np.full(max(LABEL_MAP) + 1, -1, dtype=np.int64)  # global label -> output index
+    lut[wanted] = np.arange(len(wanted))
+    y_new = lut[labels[mask].astype(np.int64)]
 
     counts = np.bincount(y_new, minlength=len(names))
     missing = [n for n, c in zip(names, counts) if c == 0]
