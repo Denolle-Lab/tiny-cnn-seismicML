@@ -88,3 +88,9 @@ def test_select_classes_vectorized_remap_matches_lookup():
     expect = {0: 0, 1: 1, 4: 2, 5: 3}
     assert ys.tolist() == [expect[int(v)] for v in y if int(v) in expect]
     assert names == ['Noise', 'Traffic', 'Train', 'Aircraft']
+
+
+def test_classes_from_config_rejects_unknown_num_classes():
+    with pytest.raises(ValueError, match="model.classes"):
+        labels.classes_from_config({'num_classes': 9})
+    assert labels.class_subset(labels.classes_from_config({'num_classes': 6})) == list(labels.LABEL_MAP.values())

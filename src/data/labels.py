@@ -94,6 +94,11 @@ def classes_from_config(model_cfg):
     if model_cfg.get('classes') is not None:
         return model_cfg['classes']
     n = int(model_cfg.get('num_classes', 2))
+    if n < 1 or n > len(LABEL_MAP):
+        raise ValueError(
+            f"num_classes={n} does not match a known subset; set model.classes to a "
+            f"MODEL_CLASSES key ({', '.join(MODEL_CLASSES)}) or a list of class names."
+        )
     return {2: 'earthquake', 3: 'rule_based'}.get(n, list(range(n)))
 
 
