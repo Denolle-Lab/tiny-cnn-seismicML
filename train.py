@@ -30,12 +30,16 @@ def create_dummy_data(num_samples=1000, num_channels=3, seq_length=6000, classes
     Labels are drawn from the global label integers of ``classes`` so the
     output goes through the same ``select_classes`` remap as real data.
     """
-    waveforms = np.random.randn(num_samples, num_channels, seq_length).astype(np.float32)
     wanted = np.array(global_labels(classes))
+    if num_samples < len(wanted):
+        raise ValueError(
+            f'num_samples={num_samples} is smaller than the {len(wanted)} classes in {classes!r}'
+        )
+    waveforms = np.random.randn(num_samples, num_channels, seq_length).astype(np.float32)
     # One guaranteed window per class so select_classes never sees an empty class
-    labels = np.concatenate([wanted, np.random.choice(wanted, max(num_samples - len(wanted), 0))])
+    labels = np.concatenate([wanted, np.random.choice(wanted, num_samples - len(wanted))])
     np.random.shuffle(labels)
-    return waveforms, labels[:num_samples]
+    return waveforms, labels
 
 
 def load_labeled_arrays(waveforms_path, labels_path):
@@ -51,6 +55,11 @@ def load_labeled_arrays(waveforms_path, labels_path):
             'length first (notebooks/03_training/train_cnn_multiclass.ipynb does this).'
         ) from err
     labels = np.load(labels_path)
+    if len(waveforms) != len(labels):
+        raise ValueError(
+            f'{waveforms_path} has {len(waveforms)} windows but {labels_path} has '
+            f'{len(labels)} labels; the two files must come from the same labeling run.'
+        )
     if waveforms.ndim == 2:  # (N, L) single channel -> (N, 1, L)
         waveforms = waveforms[:, np.newaxis, :]
     return waveforms.astype(np.float32), labels

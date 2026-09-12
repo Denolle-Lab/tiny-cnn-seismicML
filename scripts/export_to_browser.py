@@ -266,7 +266,8 @@ def main():
     args = parser.parse_args()
     classes = None
     if args.classes:
-        classes = args.classes if args.classes in MODEL_CLASSES else [c.strip() for c in args.classes.split(',')]
+        key = args.classes.strip().lower()
+        classes = key if key in MODEL_CLASSES else [c.strip() for c in args.classes.split(',') if c.strip()]
     
     # Create output directory
     output_dir = Path(args.output_dir)

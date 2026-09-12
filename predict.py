@@ -53,6 +53,7 @@ class SeismicClassifier:
             for key in ('input_channels', 'input_length'):
                 if checkpoint.get(key) is not None:
                     model_cfg[key] = int(checkpoint[key])
+        self.config['model'] = model_cfg  # predict() reads input_length from here
         if isinstance(checkpoint, dict) and checkpoint.get('class_names'):
             self.class_names = list(checkpoint['class_names'])
         else:
