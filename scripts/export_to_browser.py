@@ -25,8 +25,8 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from src.models.cnn import SeismicCNN, CompactSeismicCNN
+from src.data.labels import MODEL_CLASSES, class_subset
 
-DEFAULT_CLASS_NAMES = ["Noise", "Traffic", "Earthquake"]
 DEFAULT_SAMPLING_RATE = 100
 DEFAULT_INPUT_LENGTH = 6000
 
@@ -77,13 +77,23 @@ def get_state_dict(checkpoint):
     return checkpoint
 
 
-def infer_checkpoint_info(checkpoint, model_type):
-    """Infer browser metadata from the notebook checkpoint when available."""
+def infer_checkpoint_info(checkpoint, model_type, classes=None):
+    """
+    Infer browser metadata from the notebook checkpoint when available.
+
+    ``classes`` (a MODEL_CLASSES key or list of names) overrides the
+    checkpoint's class_names. A two-class checkpoint without class_names is
+    assumed to be Noise/Earthquake; anything wider must say which classes it
+    was trained on, since 3-class checkpoints can be rule_based, natural or
+    human and the metadata would silently mislabel outputs.
+    """
     state_dict = get_state_dict(checkpoint)
     num_classes = checkpoint.get('num_classes') if isinstance(checkpoint, dict) else None
     input_channels = checkpoint.get('input_channels') if isinstance(checkpoint, dict) else None
     input_length = checkpoint.get('input_length') if isinstance(checkpoint, dict) else None
     class_names = checkpoint.get('class_names') if isinstance(checkpoint, dict) else None
+    if classes is not None:
+        class_names = class_subset(classes)
 
     if num_classes is None:
         fc_key = 'fc.weight' if model_type == 'compact' else 'fc2.weight'
@@ -93,7 +103,19 @@ def infer_checkpoint_info(checkpoint, model_type):
     if input_length is None:
         input_length = DEFAULT_INPUT_LENGTH
     if class_names is None:
-        class_names = ["Noise", "Earthquake"] if num_classes == 2 else DEFAULT_CLASS_NAMES[:num_classes]
+        if num_classes == 2:
+            class_names = MODEL_CLASSES['earthquake']
+        else:
+            raise ValueError(
+                f"Checkpoint has {num_classes} outputs but no class_names; pass "
+                f"--classes with a MODEL_CLASSES key ({', '.join(MODEL_CLASSES)}) "
+                "or a comma-separated list of class names."
+            )
+    if len(class_names) != num_classes:
+        raise ValueError(
+            f"class_names {list(class_names)} has {len(class_names)} entries but the "
+            f"checkpoint has {num_classes} outputs."
+        )
 
     return {
         "num_classes": int(num_classes),
@@ -232,8 +254,20 @@ def main():
         action="store_true",
         help="Export all models from trained_models directory"
     )
+    parser.add_argument(
+        "--classes",
+        type=str,
+        default=None,
+        help="Class subset the checkpoint was trained on when it carries no class_names: "
+             "a src.data.labels.MODEL_CLASSES key (e.g. natural) or comma-separated names "
+             "(e.g. Noise,Train,Aircraft)"
+    )
     
     args = parser.parse_args()
+    classes = None
+    if args.classes:
+        key = args.classes.strip().lower()
+        classes = key if key in MODEL_CLASSES else [c.strip() for c in args.classes.split(',') if c.strip()]
     
     # Create output directory
     output_dir = Path(args.output_dir)
@@ -268,7 +302,7 @@ def main():
             # Load model weights
             try:
                 checkpoint = torch.load(model_path, map_location='cpu')
-                checkpoint_info = infer_checkpoint_info(checkpoint, model_type)
+                checkpoint_info = infer_checkpoint_info(checkpoint, model_type, classes)
                 model = build_model(model_type, checkpoint_info)
                 model.load_state_dict(get_state_dict(checkpoint))
             except Exception as e:
@@ -305,7 +339,7 @@ def main():
             return
         
         checkpoint = torch.load(model_path, map_location='cpu')
-        checkpoint_info = infer_checkpoint_info(checkpoint, args.model_type)
+        checkpoint_info = infer_checkpoint_info(checkpoint, args.model_type, classes)
         model = build_model(args.model_type, checkpoint_info)
         model.load_state_dict(get_state_dict(checkpoint))
         

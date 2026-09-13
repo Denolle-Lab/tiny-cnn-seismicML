@@ -2,7 +2,10 @@
 
 model:
   type: 'standard'
-  num_classes: 3  # Background, Urban, Tectonic
+  # Class subset this model separates. A key of src.data.MODEL_CLASSES
+  # ('earthquake', 'natural', 'human', 'human_traffic', 'rule_based') or an
+  # explicit list of class names. num_classes is derived from it.
+  classes: 'earthquake'
   input_channels: 3  # E-N-Z components
   input_length: 6000  # 60 seconds at 100 Hz
   dropout_rate: 0.3
@@ -17,6 +20,10 @@ training:
   early_stopping_patience: 10
 
 data:
+  # Optional: labeled arrays written by notebooks/02_labeling (global label
+  # integers, see src/data/labels.py). Leave unset to train on dummy data.
+  # waveforms: notebooks/02_labeling/labeled_data/AK_waveforms_<stamp>.npy
+  # labels: notebooks/02_labeling/labeled_data/AK_labels_<stamp>.npy
   val_split: 0.2
   use_augmentation: true
   sampling_rate: 100.0  # Hz

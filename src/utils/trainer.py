@@ -23,10 +23,12 @@ class Trainer:
         optimizer (optim.Optimizer): Optimizer
         device (torch.device): Device to train on
         save_dir (str): Directory to save checkpoints
+        metadata (dict, optional): Extra keys stored in every checkpoint
+            (model_type, class_names, num_classes, input_channels, input_length)
     """
     
     def __init__(self, model, train_loader, val_loader, criterion, 
-                 optimizer, device, save_dir='checkpoints'):
+                 optimizer, device, save_dir='checkpoints', metadata=None):
         self.model = model
         self.train_loader = train_loader
         self.val_loader = val_loader
@@ -34,6 +36,9 @@ class Trainer:
         self.optimizer = optimizer
         self.device = device
         self.save_dir = save_dir
+        # Written into every checkpoint so predict.py and the export scripts
+        # can read class_names / input shape instead of guessing them.
+        self.metadata = dict(metadata or {})
         
         os.makedirs(save_dir, exist_ok=True)
         
@@ -155,6 +160,7 @@ class Trainer:
     def save_checkpoint(self, epoch, is_best=False):
         """Save model checkpoint."""
         checkpoint = {
+            **self.metadata,
             'epoch': epoch,
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),

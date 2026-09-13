@@ -10,7 +10,7 @@ import numpy as np
 import yaml
 
 from src.models import get_model
-from src.data import preprocess_seismogram
+from src.data import preprocess_seismogram, class_subset, classes_from_config
 
 
 class SeismicClassifier:
@@ -35,26 +35,39 @@ class SeismicClassifier:
             self.config = {
                 'model': {
                     'type': 'standard',
-                    'num_classes': 3,
+                    'classes': 'earthquake',
                     'input_channels': 3,
                     'input_length': 6000
                 }
             }
         
-        # Class names
-        self.class_names = ['Background', 'Urban', 'Tectonic']
+        # Load weights first: checkpoints from train.py and the training
+        # notebook carry class_names (the model's output order, see
+        # src/data/labels.py) plus model_type / input shape. Those describe
+        # the saved weights, so they override the config where present.
+        checkpoint = torch.load(model_path, map_location=self.device)
+        model_cfg = dict(self.config['model'])
+        if isinstance(checkpoint, dict):
+            if checkpoint.get('model_type'):
+                model_cfg['type'] = checkpoint['model_type']
+            for key in ('input_channels', 'input_length'):
+                if checkpoint.get(key) is not None:
+                    model_cfg[key] = int(checkpoint[key])
+        self.config['model'] = model_cfg  # predict() reads input_length from here
+        if isinstance(checkpoint, dict) and checkpoint.get('class_names'):
+            self.class_names = list(checkpoint['class_names'])
+        else:
+            self.class_names = class_subset(classes_from_config(model_cfg))
         
         # Load model
         self.model = get_model(
-            model_type=self.config['model']['type'],
-            num_classes=self.config['model']['num_classes'],
-            input_channels=self.config['model']['input_channels'],
-            input_length=self.config['model']['input_length']
+            model_type=model_cfg['type'],
+            num_classes=len(self.class_names),
+            input_channels=model_cfg['input_channels'],
+            input_length=model_cfg['input_length']
         )
         
-        # Load weights
-        checkpoint = torch.load(model_path, map_location=self.device)
-        if 'model_state_dict' in checkpoint:
+        if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
             self.model.load_state_dict(checkpoint['model_state_dict'])
         else:
             self.model.load_state_dict(checkpoint)
@@ -63,6 +76,7 @@ class SeismicClassifier:
         self.model.eval()
         
         print(f'Model loaded from {model_path}')
+        print(f'Classes: {self.class_names}')
         print(f'Using device: {self.device}')
     
     def predict(self, waveform, fs=100.0, return_probs=False):
