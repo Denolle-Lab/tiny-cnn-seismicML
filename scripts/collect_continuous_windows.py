@@ -66,6 +66,7 @@ LABEL_MAP, NAME_TO_LABEL = labels_mod.LABEL_MAP, labels_mod.NAME_TO_LABEL
 SAMPLING_RATE = 100.0
 WINDOW_SEC = 60.0
 WINDOW_SAMPLES = int(WINDOW_SEC * SAMPLING_RATE)
+EDGE_SEC = 2.0  # taper length and keep-out margin at each end of a contiguous segment
 
 FDSN_SERVERS = {
     'AM': 'https://data.raspberryshake.org',
@@ -157,7 +158,9 @@ def preprocess(tr, freqmin, freqmax):
     tr = tr.copy()
     tr.detrend('linear')
     tr.detrend('demean')
-    tr.taper(max_percentage=0.01)
+    # Fixed 2 s taper (a percentage of a day-long trace would eat whole windows);
+    # windows within EDGE_SEC of a segment edge are skipped in window_starts.
+    tr.taper(max_percentage=None, max_length=EDGE_SEC)
     if tr.stats.sampling_rate != SAMPLING_RATE:
         tr.resample(SAMPLING_RATE)
     tr.filter('bandpass', freqmin=freqmin, freqmax=freqmax, corners=4)
@@ -179,7 +182,10 @@ def window_starts(tr, global_t0):
     tol = 0.5 / sr  # half a sample: float time arithmetic can leave 1e-9 s remainders
     first = 0 if (offset < tol or WINDOW_SEC - offset < tol) else int(round((WINDOW_SEC - offset) * sr))
     n = len(tr.data)
-    return list(range(first, n - WINDOW_SAMPLES + 1, WINDOW_SAMPLES))
+    edge = int(EDGE_SEC * sr)
+    starts = range(first, n - WINDOW_SAMPLES + 1, WINDOW_SAMPLES)
+    # Keep clear of the taper / filter transient at both ends of the segment
+    return [s for s in starts if s >= edge and s + WINDOW_SAMPLES <= n - edge]
 
 
 def load_events(path):

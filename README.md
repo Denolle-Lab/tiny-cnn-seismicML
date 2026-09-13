@@ -109,6 +109,14 @@ python scripts/collect_continuous_windows.py --network AM --station R4017 \
 
 Output: `<NET>_<class>_waveforms_<stamp>.npy` (N, 6000), `_labels_` (global label integers), `_metadata_` (station, time, label method, per-window rms and band features, blank `reviewed` / `review_label` columns), a summary text file, and with `--review-sheet N` a PNG grid plus CSV to mark `keep` by eye. `--label-from rule` flags windows whose rms exceeds 3 times a quiet reference (on AM.R4017 daytime rms is 4.7 times the 02 to 04 local median; the 5 to 30 Hz band ratio does not separate them). Load the result in the training notebook with `DATA_SOURCE = 'AM_traffic'` or append it to the AK set with `EXTRA_SOURCES = ['AM_traffic']`.
 
+Stations for these classes are listed in `configs/am_stations.yaml`: R1796 and R3130 at Romig Middle School (the partner school) and R4017 for contrast, matched to schools in `docs/am_station_school_matches.csv`. The first traffic runs are one weekday and one Saturday per station (`AM_romig_traffic_<date>_*` files), so in the notebook:
+
+```python
+DATA_SOURCE = 'ak'
+EXTRA_SOURCES = ['AM_romig_traffic_2026-09-09', 'AM_romig_traffic_2026-09-12']
+MODEL_CLASSES_KEY = 'rule_based'   # Noise / Traffic / Earthquake, or 'human_traffic' once train and aircraft exist
+```
+
 ### 2. Model Training
 
 Train the CNN using the labeled data:
