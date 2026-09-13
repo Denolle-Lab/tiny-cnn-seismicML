@@ -32,13 +32,19 @@ stations:
       Station used in the original rule-based notebook and in the
       collector's calibration (docs in scripts/collect_continuous_windows.py).
 
-# Collection settings shared by the runs above
+# Reproducible pull:  python scripts/collect_continuous_windows.py --config configs/am_stations.yaml
+# One run per day for every station whose role is in `roles`; output goes to
+# notebooks/02_labeling/labeled_data/<prefix>_{waveforms,labels,metadata}_<stamp>.*
 collection:
+  network: AM
+  roles: [primary]        # stations above to pull (R1796, R3130)
+  class_name: Traffic
   label_from: timeofday
   tz: America/Anchorage
   day_hours: [7, 19]      # -> Traffic
   night_hours: [1, 5]     # -> Noise
+  review_sheet: 24
   days:
     - 2026-09-09          # Wednesday
     - 2026-09-12          # Saturday
-  prefix_pattern: AM_romig_traffic_<date>
+  prefix_pattern: "AM_romig_traffic_{date}"

@@ -31,6 +31,9 @@ merge, linear detrend, demean, bandpass 2-20 Hz (4 corners), resample to
 100 Hz. Windows containing a data gap are dropped.
 
 Examples (from repo root):
+  # everything listed in the station config (the reproducible pull)
+  python scripts/collect_continuous_windows.py --config configs/am_stations.yaml
+
   python scripts/collect_continuous_windows.py --network AM --station R4017 \
       --start 2026-09-09 --end 2026-09-10 --class-name Traffic \
       --label-from timeofday --review-sheet 24
@@ -48,6 +51,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import yaml
 from obspy import UTCDateTime
 from obspy.clients.fdsn import Client
 from obspy.signal.trigger import classic_sta_lta
@@ -76,12 +80,16 @@ FDSN_SERVERS = {
 
 def parse_args():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('--network', required=True, help='FDSN network code (AM = Raspberry Shake, AK = Alaska)')
-    p.add_argument('--station', required=True, nargs='+', help='One or more station codes')
+    p.add_argument('--config', default=None,
+                   help='Station config YAML (configs/am_stations.yaml): runs every listed day for the '
+                        'stations whose role is in collection.roles, with the collection settings; '
+                        'other flags are then ignored except --out and --fdsn')
+    p.add_argument('--network', default=None, help='FDSN network code (AM = Raspberry Shake, AK = Alaska)')
+    p.add_argument('--station', default=None, nargs='+', help='One or more station codes')
     p.add_argument('--channel', default=None,
                    help='Channel code (default: first vertical channel found, EHZ/SHZ/HHZ/BHZ)')
-    p.add_argument('--start', required=True, help='UTC start, e.g. 2026-09-09T16:00:00')
-    p.add_argument('--end', required=True, help='UTC end')
+    p.add_argument('--start', default=None, help='UTC start, e.g. 2026-09-09T16:00:00')
+    p.add_argument('--end', default=None, help='UTC end')
     p.add_argument('--chunk-hours', type=float, default=6.0, help='Download chunk length (hours)')
     p.add_argument('--fdsn', default=None, help='FDSN base URL or name; default by network')
 
@@ -115,7 +123,38 @@ def parse_args():
     p.add_argument('--review-sheet', type=int, default=0,
                    help='Write a PNG grid + CSV of N random positive windows for eye-check')
     p.add_argument('--seed', type=int, default=42)
-    return p.parse_args()
+    args = p.parse_args()
+    if not args.config and not (args.network and args.station and args.start and args.end):
+        p.error('give --config, or all of --network --station --start --end')
+    return args
+
+
+def runs_from_config(args):
+    """Expand a station config into one argparse namespace per collection day."""
+    cfg = yaml.safe_load(open(args.config))
+    col = cfg['collection']
+    roles = set(col.get('roles', ['primary']))
+    stations = [st['code'] for st in cfg['stations'] if st.get('role', 'primary') in roles]
+    if not stations:
+        raise SystemExit(f'No stations with role in {sorted(roles)} in {args.config}')
+    runs = []
+    for day in col['days']:
+        day = str(day)[:10]
+        t0 = UTCDateTime(day)
+        run = argparse.Namespace(**vars(args))
+        run.network = col.get('network', 'AM')
+        run.station = stations
+        run.start, run.end = str(t0), str(t0 + 86400)
+        run.class_name = col.get('class_name', 'Traffic')
+        run.label_from = col.get('label_from', 'timeofday')
+        run.tz = col.get('tz', run.tz)
+        run.day_hours = tuple(col.get('day_hours', run.day_hours))
+        run.night_hours = tuple(col.get('night_hours', run.night_hours))
+        run.review_sheet = int(col.get('review_sheet', run.review_sheet))
+        run.prefix = col.get('prefix_pattern', '{network}_{class}_{date}').format(
+            network=run.network, **{'class': run.class_name.lower()}, date=day)
+        runs.append(run)
+    return runs
 
 
 def pick_vertical_channel(client, network, station, t0, t1, requested=None):
@@ -208,6 +247,15 @@ def overlapping_event(ev, w0, w1, pad):
 
 def main():
     args = parse_args()
+    if args.config:
+        for run in runs_from_config(args):
+            print(f'\n=== {run.prefix}: {run.network} {" ".join(run.station)} {run.start[:10]} ===')
+            collect(run)
+    else:
+        collect(args)
+
+
+def collect(args):
     rng = np.random.default_rng(args.seed)
     t0, t1 = UTCDateTime(args.start), UTCDateTime(args.end)
     if t1 <= t0:

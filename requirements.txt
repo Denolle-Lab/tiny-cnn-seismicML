@@ -18,6 +18,7 @@ pandas>=2.0.0
 
 # Utilities
 pyyaml>=6.0
+tzdata>=2024.1  # zoneinfo database for --label-from timeofday on Windows
 tqdm>=4.65.0
 
 # Jupyter (optional, for notebooks)
