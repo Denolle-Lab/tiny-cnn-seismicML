@@ -304,15 +304,23 @@ def main():
     X = np.stack(windows)
     meta = pd.DataFrame(rows)
     if args.label_from == 'rule':
-        ref = args.reference_rms if args.reference_rms else float(np.percentile(meta['rms'], 10))
-        positive = meta['rms'] >= args.rule_rms_factor * ref
+        # Station-relative: one reference per station (site gain and local noise
+        # differ), unless a single --reference-rms is given for all of them.
+        if args.reference_rms:
+            meta['reference_rms'] = float(args.reference_rms)
+        else:
+            meta['reference_rms'] = meta.groupby('station')['rms'].transform(lambda r: np.percentile(r, 10))
+        positive = meta['rms'] >= args.rule_rms_factor * meta['reference_rms']
         meta['label'] = np.where(positive, positive_label, 0)
         meta['label_name'] = meta['label'].map(LABEL_MAP)
         meta['window_type'] = meta['label_name'].str.lower()
-        meta['label_method'] = f'rule:rms>={args.rule_rms_factor}x{ref:.1f}'
-        meta['rms_ratio'] = meta['rms'] / ref
-        print(f'\nRule reference rms {ref:.1f} counts ({"given" if args.reference_rms else "10th percentile"}), '
-              f'factor {args.rule_rms_factor}')
+        meta['label_method'] = f'rule:rms>={args.rule_rms_factor}x' + (
+            f'{args.reference_rms:.1f}' if args.reference_rms else 'station_p10')
+        meta['rms_ratio'] = meta['rms'] / meta['reference_rms']
+        refs = meta.groupby('station')['reference_rms'].first()
+        print(f'\nRule factor {args.rule_rms_factor}, reference rms per station '
+              f'({"given" if args.reference_rms else "10th percentile"}): '
+              + ', '.join(f'{k}={v:.1f}' for k, v in refs.items()))
     y = meta['label'].to_numpy(dtype=np.int64)
 
     out = Path(args.out)
