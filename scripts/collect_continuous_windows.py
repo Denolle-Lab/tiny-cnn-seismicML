@@ -176,7 +176,8 @@ def window_starts(tr, global_t0):
     """Window start samples aligned to whole minutes counted from global_t0."""
     sr = tr.stats.sampling_rate
     offset = (tr.stats.starttime - global_t0) % WINDOW_SEC
-    first = 0 if offset == 0 else int(round((WINDOW_SEC - offset) * sr))
+    tol = 0.5 / sr  # half a sample: float time arithmetic can leave 1e-9 s remainders
+    first = 0 if (offset < tol or WINDOW_SEC - offset < tol) else int(round((WINDOW_SEC - offset) * sr))
     n = len(tr.data)
     return list(range(first, n - WINDOW_SAMPLES + 1, WINDOW_SAMPLES))
 
@@ -225,7 +226,9 @@ def main():
         for tr in traces:
             if len(tr.data) < WINDOW_SAMPLES * (tr.stats.sampling_rate / SAMPLING_RATE) + 2:
                 continue
-            tr_raw = tr.copy().detrend('linear').detrend('demean')
+            tr_raw = tr.copy()
+            tr_raw.data = tr_raw.data.astype(np.float64)  # miniSEED ints would overflow in x**2
+            tr_raw.detrend('linear').detrend('demean')
             if tr_raw.stats.sampling_rate != SAMPLING_RATE:
                 tr_raw.resample(SAMPLING_RATE)
             tr_train = preprocess(tr, args.freqmin, args.freqmax)
@@ -234,11 +237,12 @@ def main():
             for s in window_starts(tr_train, t0):
                 e = s + WINDOW_SAMPLES
                 w_train = tr_train.data[s:e].astype(np.float32)
-                w_raw = tr_raw.data[s:e]
-                w_band = band_data[s:e]
+                w_raw = np.asarray(tr_raw.data[s:e], dtype=np.float64)
+                w_band = np.asarray(band_data[s:e], dtype=np.float64)
                 w_t0 = tr_train.stats.starttime + s / sr
                 w_t1 = w_t0 + WINDOW_SEC
-                if w_t0 < t0 or w_t1 > t1 or not np.all(np.isfinite(w_train)):
+                # Half-sample tolerance: Raspberry Shake samples sit ~2 ms off the whole second
+                if w_t0 < t0 - 0.5 / sr or w_t1 > t1 + 0.5 / sr or not np.all(np.isfinite(w_train)):
                     continue
                 total = float(np.sum(w_raw ** 2)) or 1.0
                 feats = {
