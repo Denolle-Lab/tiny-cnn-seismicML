@@ -91,6 +91,24 @@ That notebook:
 - Applies rule-based classification to label windows as Noise, Traffic, or Earthquake
 - Saves labeled data to `notebooks/02_labeling/labeled_data/` directory
 
+Note that this notebook cuts 5 s windows from 30 minutes around one earthquake, so its output does not mix with the 60 s AK windows.
+
+For the anthropogenic classes (Traffic, Train, Aircraft; issues #10 to #12) use the continuous-window collector, which writes 60 s / 100 Hz windows in the AK file layout with a provisional label and a review sheet:
+
+```bash
+# one station-day of Raspberry Shake data, daytime = Traffic, 01-05 local = Noise
+python scripts/collect_continuous_windows.py --network AM --station R4017 \
+    --start 2026-09-09 --end 2026-09-10 --class-name Traffic \
+    --label-from timeofday --review-sheet 24
+
+# train passages or ADS-B landings from a CSV with a "time" column
+python scripts/collect_continuous_windows.py --network AM --station R4017 \
+    --start 2026-09-09 --end 2026-09-10 --class-name Train \
+    --label-from events --events passages.csv
+```
+
+Output: `<NET>_<class>_waveforms_<stamp>.npy` (N, 6000), `_labels_` (global label integers), `_metadata_` (station, time, label method, per-window rms and band features, blank `reviewed` / `review_label` columns), a summary text file, and with `--review-sheet N` a PNG grid plus CSV to mark `keep` by eye. `--label-from rule` flags windows whose rms exceeds 3 times a quiet reference (on AM.R4017 daytime rms is 4.7 times the 02 to 04 local median; the 5 to 30 Hz band ratio does not separate them). Load the result in the training notebook with `DATA_SOURCE = 'AM_traffic'` or append it to the AK set with `EXTRA_SOURCES = ['AM_traffic']`.
+
 ### 2. Model Training
 
 Train the CNN using the labeled data:
