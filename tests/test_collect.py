@@ -147,3 +147,16 @@ def test_label_event_detections_works_on_a_slice_with_offset_index():
     out, rep = collect.label_event_detections(meta, events, positive_label=4, search_sec=240, factor=3.0)
     assert list(out.index) == list(meta.index)
     assert out.loc[1015, 'label'] == 4 and rep.iloc[0]['detected']
+
+
+def test_label_event_detections_keeps_positives_from_an_earlier_overlapping_event():
+    base = UTCDateTime('2026-09-09T14:00:00')
+    n = 40
+    meta = pd.DataFrame({'station': ['S'] * n, 'start_time': [str(base + 60 * i) for i in range(n)],
+                         'label': [0] * n, 'label_name': ['Noise'] * n, 'window_type': ['noise'] * n,
+                         'label_method': ['events'] * n, 'rms_band': [100.0] * n})
+    meta.loc[10, 'rms_band'] = 900.0                     # one strong event at 14:10
+    events = pd.DataFrame({'event_id': ['seen', 'unseen'], 't0': [base + 60 * 10, base + 60 * 16]})
+    out, rep = collect.label_event_detections(meta, events, positive_label=5, search_sec=420, factor=3.0)
+    assert out.loc[10, 'label'] == 5 and not out.loc[10, 'drop']   # the second span (14:09 .. 14:23) overlaps it
+    assert rep.set_index('event_id').loc['unseen', 'detected'] == False  # noqa: E712
