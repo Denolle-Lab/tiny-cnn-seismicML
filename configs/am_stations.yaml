@@ -42,7 +42,9 @@ collection:
   label_from: timeofday
   tz: America/Anchorage
   day_hours: [7, 19]      # -> Traffic
-  night_hours: [1, 5]     # -> Noise
+  night_hours: [1, 5]     # -> Noise, except isolated vehicle passes (below)
+  burst_factor: 20        # night window with raw peak >= 20 x station night median rms -> Traffic
+  exclude_events: true    # drop windows overlapping USGS M>=2 events within 2 deg (origin to +120 s)
   review_sheet: 24
   days:
     - 2026-09-09          # Wednesday (local calendar day in tz)
