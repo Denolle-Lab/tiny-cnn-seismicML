@@ -253,7 +253,8 @@ def label_event_detections(meta, events, positive_label, search_sec=900.0, facto
     Scheduled events with uncertain timing (a train passing a station, a
     take-off roll): within +/- ``search_sec`` of each event time, the windows
     whose rms reaches ``factor`` times the median rms of the search span are
-    the event. The contiguous run around the maximum (at most ``max_windows``)
+    the event. Every contiguous run of such windows (each at most
+    ``max_windows`` long: a train meeting another at a siding gives two runs)
     gets ``positive_label``; other windows in the span are ambiguous and are
     marked ``drop``; windows outside every span keep ``noise_label``. Windows an
     earlier event already labeled positive are left out of a later overlapping
@@ -297,14 +298,12 @@ def label_event_detections(meta, events, positive_label, search_sec=900.0, facto
             if ratio[k] < factor:
                 meta.loc[span, 'drop'] = True  # scheduled but not seen: ambiguous, keep out of Noise
                 report.append({'station': station, 'event_id': ev.event_id, 'detected': False,
-                               'peak_ratio': float(ratio[k]), 'n_windows': 0})
+                               'peak_ratio': float(ratio[k]), 'n_windows': 0, 'n_runs': 0})
                 continue
-            lo = hi = k
-            while lo > 0 and ratio[lo - 1] >= factor and hi - lo + 1 < max_windows:
-                lo -= 1
-            while hi < len(ratio) - 1 and ratio[hi + 1] >= factor and hi - lo + 1 < max_windows:
-                hi += 1
-            hit = span[lo:hi + 1]
+            above = ratio >= factor
+            edges = np.diff(np.r_[0, above.astype(int), 0])
+            runs = list(zip(np.flatnonzero(edges == 1), np.flatnonzero(edges == -1)))
+            hit = np.concatenate([span[a:min(b, a + max_windows)] for a, b in runs])
             meta.loc[span, 'drop'] = True
             meta.loc[hit, 'drop'] = False
             meta.loc[hit, 'label'] = positive_label
@@ -313,7 +312,7 @@ def label_event_detections(meta, events, positive_label, search_sec=900.0, facto
             meta.loc[hit, 'label_method'] = f'events:search{search_sec:g}s,rms>={factor:g}x'
             meta.loc[hit, 'event_id'] = str(ev.event_id)
             report.append({'station': station, 'event_id': ev.event_id, 'detected': True,
-                           'peak_ratio': float(ratio[k]), 'n_windows': int(hi - lo + 1)})
+                           'peak_ratio': float(ratio[k]), 'n_windows': int(len(hit)), 'n_runs': len(runs)})
     meta.index = orig_index
     return meta, pd.DataFrame(report)
 

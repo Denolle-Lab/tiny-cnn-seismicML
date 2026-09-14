@@ -160,3 +160,19 @@ def test_label_event_detections_keeps_positives_from_an_earlier_overlapping_even
     out, rep = collect.label_event_detections(meta, events, positive_label=5, search_sec=420, factor=3.0)
     assert out.loc[10, 'label'] == 5 and not out.loc[10, 'drop']   # the second span (14:09 .. 14:23) overlaps it
     assert rep.set_index('event_id').loc['unseen', 'detected'] == False  # noqa: E712
+
+
+def test_label_event_detections_labels_every_run_above_threshold():
+    # Two trains meeting at a siding: two separate spindles inside one search span
+    base = UTCDateTime('2026-09-09T14:00:00')
+    n = 40
+    meta = pd.DataFrame({'station': ['S'] * n, 'start_time': [str(base + 60 * i) for i in range(n)],
+                         'label': [0] * n, 'label_name': ['Noise'] * n, 'window_type': ['noise'] * n,
+                         'label_method': ['events'] * n, 'rms_band': [10.0] * n})
+    meta.loc[[12, 13], 'rms_band'] = [200.0, 80.0]
+    meta.loc[22, 'rms_band'] = 210.0
+    events = pd.DataFrame({'event_id': ['glacier'], 't0': [base + 60 * 19]})
+    out, rep = collect.label_event_detections(meta, events, positive_label=4, search_sec=900, factor=3.0)
+    assert out.loc[[12, 13, 22], 'label'].tolist() == [4, 4, 4]
+    assert rep.iloc[0]['n_runs'] == 2 and rep.iloc[0]['n_windows'] == 3
+    assert out.loc[[5, 17, 30], 'drop'].all()

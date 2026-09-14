@@ -1,0 +1,17 @@
+day,station,label_name,rule,windows
+2026-09-09,R1796,Noise,timeofday,203
+2026-09-09,R1796,Traffic,timeofday,705
+2026-09-09,R1796,Traffic,timeofday+burst,34
+2026-09-09,R3130,Noise,timeofday,229
+2026-09-09,R3130,Traffic,timeofday,705
+2026-09-09,R3130,Traffic,timeofday+burst,8
+2026-09-12,R1796,Noise,timeofday,213
+2026-09-12,R1796,Traffic,timeofday,706
+2026-09-12,R1796,Traffic,timeofday+burst,24
+2026-09-12,R3130,Noise,timeofday,223
+2026-09-12,R3130,Traffic,timeofday,699
+2026-09-12,R3130,Traffic,timeofday+burst,14
+2026-09-09,K222,Noise,events,1228
+2026-09-09,K222,Train,events,7
+2026-09-12,K222,Noise,events,1233
+2026-09-12,K222,Train,events,6
