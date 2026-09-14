@@ -295,10 +295,11 @@ def main():
     night = (hours >= night_h[0]) & (hours < night_h[1])
     base = np.median(env[night])
     above = night & (env > 6 * base)
-    # group contiguous samples above threshold into bursts
-    edges = np.flatnonzero(np.diff(above.astype(int)))
-    starts_ = edges[::2] if above[0] == 0 else np.r_[0, edges[1::2]]
-    ends_ = edges[1::2] if above[0] == 0 else edges[::2]
+    # group contiguous samples above threshold into bursts; padding with a
+    # zero at both ends gives every burst a rising and a falling edge
+    d = np.diff(np.r_[0, above.astype(int), 0])
+    starts_ = np.flatnonzero(d == 1)      # first sample above threshold
+    ends_ = np.flatnonzero(d == -1)       # one past the last sample above
     bursts = []
     for a, b in zip(starts_, ends_):
         dur = (b - a) / SR

@@ -92,8 +92,8 @@ def parse_args():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('--config', default=None,
                    help='Station config YAML (configs/am_stations.yaml): runs every listed day for the '
-                        'stations whose role is in collection.roles, with the collection settings; '
-                        'other flags are then ignored except --out and --fdsn')
+                        'stations whose role is in collection.roles. Every key under collection: overrides '
+                        'the flag of the same name; flags absent from the config apply as given')
     p.add_argument('--network', default=None, help='FDSN network code (AM = Raspberry Shake, AK = Alaska)')
     p.add_argument('--station', default=None, nargs='+', help='One or more station codes')
     p.add_argument('--channel', default=None,
@@ -174,12 +174,15 @@ def runs_from_config(args):
         run.start, run.end = str(t0), str(t1)
         run.class_name = col.get('class_name', 'Traffic')
         run.label_from = col.get('label_from', 'timeofday')
-        run.tz = col.get('tz', run.tz)
-        run.day_hours = tuple(col.get('day_hours', run.day_hours))
-        run.night_hours = tuple(col.get('night_hours', run.night_hours))
-        run.review_sheet = int(col.get('review_sheet', run.review_sheet))
-        run.burst_factor = float(col.get('burst_factor', run.burst_factor))
-        run.exclude_events = bool(col.get('exclude_events', run.exclude_events))
+        # Any collection key that names a flag overrides it, so the YAML can
+        # carry every setting that changes the output (reproducible pull).
+        for key in ('channel', 'chunk_hours', 'events', 'event_pad_sec', 'rule_rms_factor', 'reference_rms',
+                    'rule_band', 'tz', 'day_hours', 'night_hours', 'burst_factor', 'exclude_events',
+                    'event_minmag', 'event_radius_deg', 'event_coda_sec', 'freqmin', 'freqmax',
+                    'review_sheet', 'seed'):
+            if key in col:
+                value = col[key]
+                setattr(run, key, tuple(value) if isinstance(value, list) else value)
         run.prefix = col.get('prefix_pattern', '{network}_{class}_{date}').format(
             network=run.network, **{'class': run.class_name.lower()}, date=day)
         runs.append(run)
