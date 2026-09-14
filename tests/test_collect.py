@@ -98,3 +98,52 @@ def test_write_dataset_roundtrip_fixed_and_ragged(tmp_path):
 
     with pytest.raises(ValueError):
         collect.write_dataset(tmp_path, 'bad', X, y[:3], meta)
+
+
+def test_label_event_detections_finds_the_burst_and_drops_the_rest_of_the_span():
+    base = UTCDateTime('2026-09-09T14:00:00')
+    n = 40  # 40 minutes of windows at one station
+    meta = pd.DataFrame({
+        'station': ['S'] * n,
+        'start_time': [str(base + 60 * i) for i in range(n)],
+        'label': [0] * n, 'label_name': ['Noise'] * n, 'window_type': ['noise'] * n,
+        'label_method': ['events'] * n,
+        'rms': [100.0] * n,
+    })
+    meta.loc[[20, 21], 'rms'] = [500.0, 400.0]        # a two-minute passage at 14:20
+    events = pd.DataFrame({'event_id': ['train1', 'ghost'],
+                           't0': [base + 60 * 18, base + 60 * 60]})  # scheduled 14:18; and one outside the data
+    out, rep = collect.label_event_detections(meta, events, positive_label=4, search_sec=300, factor=3.0)
+    assert out.loc[[20, 21], 'label'].tolist() == [4, 4]
+    assert out.loc[20, 'event_id'] == 'train1' and out.loc[20, 'label_name'] == 'Train'
+    span = list(range(13, 24))                        # 14:13 .. 14:23 lie within +/- 5 min of 14:18
+    assert out.loc[[i for i in span if i not in (20, 21)], 'drop'].all()
+    assert not out.loc[[0, 5, 30, 39], 'drop'].any() and (out.loc[[0, 5, 30, 39], 'label'] == 0).all()
+    r = rep.set_index('event_id')
+    assert r.loc['train1', 'detected'] and r.loc['train1', 'n_windows'] == 2 and r.loc['train1', 'peak_ratio'] == 5.0
+    assert not r.loc['ghost', 'detected']
+
+
+def test_label_event_detections_marks_unseen_scheduled_event_ambiguous():
+    base = UTCDateTime('2026-09-09T14:00:00')
+    meta = pd.DataFrame({'station': ['S'] * 20, 'start_time': [str(base + 60 * i) for i in range(20)],
+                         'label': [0] * 20, 'label_name': ['Noise'] * 20, 'window_type': ['noise'] * 20,
+                         'label_method': ['events'] * 20, 'rms': [100.0] * 20})
+    events = pd.DataFrame({'event_id': ['quiet'], 't0': [base + 60 * 10]})
+    out, rep = collect.label_event_detections(meta, events, positive_label=4, search_sec=180, factor=3.0)
+    assert (out['label'] == 0).all()
+    assert out.loc[7:13, 'drop'].all() and not out.loc[[0, 19], 'drop'].any()
+    assert not rep.iloc[0]['detected'] and rep.iloc[0]['peak_ratio'] == 1.0
+
+
+def test_label_event_detections_works_on_a_slice_with_offset_index():
+    base = UTCDateTime('2026-09-09T14:00:00')
+    n = 30
+    meta = pd.DataFrame({'station': ['S'] * n, 'start_time': [str(base + 60 * i) for i in range(n)],
+                         'label': [0] * n, 'label_name': ['Noise'] * n, 'window_type': ['noise'] * n,
+                         'label_method': ['events'] * n, 'rms': [100.0] * n}, index=range(1000, 1000 + n))
+    meta.loc[1015, 'rms'] = 900.0
+    events = pd.DataFrame({'event_id': ['e'], 't0': [base + 60 * 14]})
+    out, rep = collect.label_event_detections(meta, events, positive_label=4, search_sec=240, factor=3.0)
+    assert list(out.index) == list(meta.index)
+    assert out.loc[1015, 'label'] == 4 and rep.iloc[0]['detected']

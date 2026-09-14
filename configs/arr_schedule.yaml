@@ -1,0 +1,51 @@
+# Alaska Railroad passenger trains at the Anchorage depot (61.2205, -149.8836),
+# summer 2026 timetable (alaska.org / alaskatravel.com schedule pages, read
+# 2026-09-14). Times are local (America/Anchorage). Freight is not scheduled
+# publicly; the search-and-detect step in the collector catches whatever
+# passes within the search span, so the timetable only needs to be roughly right.
+tz: America/Anchorage
+trains:
+  - id: coastal_classic_out
+    name: Coastal Classic, Anchorage -> Seward
+    direction: south          # passes Spenard, Romig, Potter (K222), Girdwood
+    depot_time: "06:45"
+    season: [2026-05-15, 2026-09-13]
+    days: [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+  - id: coastal_classic_back
+    name: Coastal Classic, Seward -> Anchorage
+    direction: south_arrival
+    depot_time: "22:15"
+    season: [2026-05-15, 2026-09-13]
+    days: [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+  - id: glacier_discovery_out
+    name: Glacier Discovery, Anchorage -> Whittier / Spencer
+    direction: south
+    depot_time: "09:45"
+    season: [2026-05-11, 2026-09-14]
+    days: [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+  - id: glacier_discovery_back
+    name: Glacier Discovery, Whittier -> Anchorage
+    direction: south_arrival
+    depot_time: "21:15"
+    season: [2026-05-11, 2026-09-14]
+    days: [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+  - id: denali_star_out
+    name: Denali Star, Anchorage -> Fairbanks
+    direction: north          # passes Government Hill (K223), Eagle River (K217), Wasilla (MS01)
+    depot_time: "08:15"
+    season: [2026-05-13, 2026-09-16]
+    days: [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+  - id: denali_star_back
+    name: Denali Star, Fairbanks -> Anchorage
+    direction: north_arrival
+    depot_time: "20:00"
+    season: [2026-05-14, 2026-09-17]
+    days: [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+
+# Minutes from the depot time to the passage at each station, by direction.
+# Rough (yard speeds through town): the collector searches +/- 15 min anyway.
+station_offsets_min:
+  south:         {K208: 9, R8F48: 9, S909E: 9, R6C15: 9, R1796: 8, K205: 8, K222: 30}
+  south_arrival: {K208: -9, R8F48: -9, S909E: -9, R6C15: -9, R1796: -8, K205: -8, K222: -30}
+  north:         {K223: 3, K217: 35, MS01: 75}
+  north_arrival: {K223: -3, K217: -40, MS01: -105}
