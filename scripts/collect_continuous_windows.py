@@ -54,38 +54,25 @@ Examples (from repo root):
 
 import argparse
 import sys
-import time
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import yaml
 from obspy import UTCDateTime
-from obspy.clients.fdsn import Client
 from obspy.signal.trigger import classic_sta_lta
 from scipy.stats import kurtosis
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
-# Only the label module: src/__init__ pulls in torch, which this script does not need.
-import importlib.util
-_spec = importlib.util.spec_from_file_location('labels', REPO_ROOT / 'src' / 'data' / 'labels.py')
-labels_mod = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(labels_mod)
-LABEL_MAP, NAME_TO_LABEL = labels_mod.LABEL_MAP, labels_mod.NAME_TO_LABEL
-
-SAMPLING_RATE = 100.0
-WINDOW_SEC = 60.0
-WINDOW_SAMPLES = int(WINDOW_SEC * SAMPLING_RATE)
-EDGE_SEC = 2.0  # taper length and keep-out margin at each end of a contiguous segment
-
-FDSN_SERVERS = {
-    'AM': 'https://data.raspberryshake.org',
-    'AK': 'IRIS',
-}
+# src.data imports without torch (the PyTorch Dataset is loaded lazily).
+from src.data.labels import LABEL_MAP, NAME_TO_LABEL
+from src.data.collect import (
+    BANDPASS, SAMPLING_RATE, WINDOW_SAMPLES, WINDOW_SEC,
+    catalog_events, detrend_resample, fetch_stream, local_day_bounds, local_hour, make_client,
+    overlaps_event, pick_vertical_channel, preprocess, relabel_bursts, window_starts, write_dataset,
+)
 
 
 def parse_args():
@@ -135,8 +122,8 @@ def parse_args():
     p.add_argument('--night-hours', type=int, nargs=2, default=(1, 5), metavar=('H0', 'H1'),
                    help='Local hours [H0, H1) labeled Noise')
 
-    p.add_argument('--freqmin', type=float, default=2.0, help='Training bandpass low (AK convention 2 Hz)')
-    p.add_argument('--freqmax', type=float, default=20.0, help='Training bandpass high (AK convention 20 Hz)')
+    p.add_argument('--freqmin', type=float, default=BANDPASS[0], help='Training bandpass low (AK convention 2 Hz)')
+    p.add_argument('--freqmax', type=float, default=BANDPASS[1], help='Training bandpass high (AK convention 20 Hz)')
 
     p.add_argument('--out', default=str(REPO_ROOT / 'notebooks' / '02_labeling' / 'labeled_data'))
     p.add_argument('--prefix', default=None, help='File prefix (default <network>_<class-name lower>)')
@@ -158,16 +145,13 @@ def runs_from_config(args):
     stations = [st['code'] for st in cfg['stations'] if st.get('role', 'primary') in roles]
     if not stations:
         raise SystemExit(f'No stations with role in {sorted(roles)} in {args.config}')
-    tz = ZoneInfo(col.get('tz', args.tz))
-    utc = ZoneInfo('UTC')
+    tz = col.get('tz', args.tz)
     runs = []
     for day in col['days']:
         day = str(day)[:10]
         # A config day is a local calendar day (midnight to midnight in col.tz),
         # so the weekday/weekend split and the {date} prefix mean what they say.
-        local0 = datetime.fromisoformat(day).replace(tzinfo=tz)
-        local1 = (local0 + timedelta(days=1)).replace(tzinfo=None).replace(tzinfo=tz)  # DST-safe next midnight
-        t0, t1 = UTCDateTime(local0.astimezone(utc)), UTCDateTime(local1.astimezone(utc))
+        t0, t1 = local_day_bounds(day, tz)
         run = argparse.Namespace(**vars(args))
         run.network = col.get('network', 'AM')
         run.station = stations
@@ -189,112 +173,12 @@ def runs_from_config(args):
     return runs
 
 
-def with_retries(fn, what, attempts=3):
-    """Call fn(); on any exception wait and retry (the Raspberry Shake server 502s now and then)."""
-    for attempt in range(1, attempts + 1):
-        try:
-            return fn()
-        except Exception as err:
-            if attempt == attempts:
-                raise
-            print(f'  {what}: {type(err).__name__} (attempt {attempt}/{attempts}), retrying')
-            time.sleep(15 * attempt)
-
-
-def pick_vertical_channel(client, network, station, t0, t1, requested=None):
-    inv = with_retries(lambda: client.get_stations(network=network, station=station, starttime=t0, endtime=t1,
-                                                   level='channel'), f'{network}.{station} metadata')
-    chans = {ch.code: (sta.latitude, sta.longitude, ch.sample_rate)
-             for net in inv for sta in net for ch in sta}
-    if requested:
-        if requested not in chans:
-            raise ValueError(f'{network}.{station} has no {requested}; channels: {sorted(chans)}')
-        return requested, chans[requested]
-    for code in ('EHZ', 'SHZ', 'HHZ', 'BHZ', 'ENZ'):
-        if code in chans:
-            return code, chans[code]
-    raise ValueError(f'{network}.{station} has no vertical channel; channels: {sorted(chans)}')
-
-
-def fetch_stream(client, network, station, channel, t0, t1, chunk_hours, native_sr=100.0, min_fraction=0.95):
-    """
-    Download in chunks, return one merged Stream (gaps left as separate traces).
-
-    A chunk that comes back with fewer than ``min_fraction`` of the expected
-    samples is treated as a failed attempt and re-requested (the Raspberry
-    Shake server returns truncated responses under load); the longest
-    response of the attempts is kept.
-    """
-    from obspy import Stream
-    from obspy.clients.fdsn.header import FDSNNoDataException
-    out = Stream()
-    t = t0
-    step = chunk_hours * 3600.0
-    while t < t1:
-        te = min(t + step, t1)
-        expected = (te - t) * native_sr
-        best = None
-        for attempt in range(1, 4):
-            try:
-                st = client.get_waveforms(network, station, '*', channel, t - 5, te + 5)
-            except FDSNNoDataException:
-                print(f'  {t.isoformat()[:19]} -> {te.isoformat()[:19]}: no data')
-                break
-            except Exception as err:
-                print(f'  {t.isoformat()[:19]} -> {te.isoformat()[:19]}: {type(err).__name__} (attempt {attempt}/3)')
-                time.sleep(10 * attempt)
-                continue
-            n = sum(len(tr) for tr in st)
-            if best is None or n > sum(len(tr) for tr in best):
-                best = st
-            if n >= min_fraction * expected:
-                break
-            print(f'  {t.isoformat()[:19]} -> {te.isoformat()[:19]}: {n} of ~{expected:.0f} samples '
-                  f'(attempt {attempt}/3), re-requesting')
-            time.sleep(10 * attempt)
-        if best is not None:
-            out += best
-            print(f'  {t.isoformat()[:19]} -> {te.isoformat()[:19]}: {sum(len(tr) for tr in best)} samples')
-        t = te
-    if len(out) == 0:
-        return out
-    out.merge(method=1, fill_value=None)  # gaps become masked
-    return out.split()                    # ...and then separate gap-free traces
-
-
-def preprocess(tr, freqmin, freqmax):
-    """AK-notebook preprocessing on one gap-free trace, returns a copy."""
-    tr = tr.copy()
-    tr.detrend('linear')
-    tr.detrend('demean')
-    # Fixed 2 s taper (a percentage of a day-long trace would eat whole windows);
-    # windows within EDGE_SEC of a segment edge are skipped in window_starts.
-    tr.taper(max_percentage=None, max_length=EDGE_SEC)
-    if tr.stats.sampling_rate != SAMPLING_RATE:
-        tr.resample(SAMPLING_RATE)
-    tr.filter('bandpass', freqmin=freqmin, freqmax=freqmax, corners=4)
-    return tr
-
-
 def rule_features(tr_raw, band):
-    """Per-window traffic-band features on a resampled, detrended, unfiltered trace."""
+    """Traffic-band copy and STA/LTA (1 s / 10 s) of a detrended, resampled, unfiltered trace."""
     tr_band = tr_raw.copy().filter('bandpass', freqmin=band[0], freqmax=band[1], corners=4)
     sr = tr_raw.stats.sampling_rate
     cft = classic_sta_lta(tr_band.data, int(1.0 * sr), int(10.0 * sr))
     return tr_band.data, cft
-
-
-def window_starts(tr, global_t0):
-    """Window start samples aligned to whole minutes counted from global_t0."""
-    sr = tr.stats.sampling_rate
-    offset = (tr.stats.starttime - global_t0) % WINDOW_SEC
-    tol = 0.5 / sr  # half a sample: float time arithmetic can leave 1e-9 s remainders
-    first = 0 if (offset < tol or WINDOW_SEC - offset < tol) else int(round((WINDOW_SEC - offset) * sr))
-    n = len(tr.data)
-    edge = int(EDGE_SEC * sr)
-    starts = range(first, n - WINDOW_SAMPLES + 1, WINDOW_SAMPLES)
-    # Keep clear of the taper / filter transient at both ends of the segment
-    return [s for s in starts if s >= edge and s + WINDOW_SAMPLES <= n - edge]
 
 
 def load_events(path):
@@ -306,23 +190,6 @@ def load_events(path):
     if 'event_id' not in ev.columns:
         ev['event_id'] = [f'ev{i:05d}' for i in range(len(ev))]
     return ev
-
-
-def catalog_events(t0, t1, lat, lon, minmag, radius_deg):
-    """USGS events in the range; returns [(origin UTCDateTime, mag, dist_km)]."""
-    from obspy.geodetics import gps2dist_azimuth
-    try:
-        cat = Client('USGS', timeout=60).get_events(starttime=t0, endtime=t1, latitude=lat, longitude=lon,
-                                                     maxradius=radius_deg, minmagnitude=minmag)
-    except Exception as err:  # no events (204) or catalog down: nothing to exclude
-        print(f'  catalog query: {type(err).__name__}, no exclusions')
-        return []
-    out = []
-    for ev in cat:
-        o = ev.preferred_origin() or ev.origins[0]
-        m = ev.preferred_magnitude() or ev.magnitudes[0]
-        out.append((o.time, m.mag, gps2dist_azimuth(lat, lon, o.latitude, o.longitude)[0] / 1000))
-    return out
 
 
 def overlapping_event(ev, w0, w1, pad):
@@ -350,13 +217,12 @@ def collect(args):
     positive_label = NAME_TO_LABEL[args.class_name.lower()]
     prefix = args.prefix or f'{args.network}_{args.class_name.lower()}'
     events = load_events(args.events) if args.label_from == 'events' else None
-    tz = ZoneInfo(args.tz)
+    tz = args.tz
     if args.label_from == 'events' and events is None:
         raise SystemExit('--label-from events needs --events')
 
-    fdsn = args.fdsn or FDSN_SERVERS.get(args.network, 'IRIS')
-    client = Client(base_url=fdsn, timeout=120) if fdsn.startswith('http') else Client(fdsn, timeout=120)
-    print(f'FDSN: {fdsn}')
+    client = make_client(args.network, args.fdsn)
+    print(f'FDSN: {client.base_url}')
 
     windows, rows = [], []
     for station in args.station:
@@ -374,15 +240,11 @@ def collect(args):
         for tr in traces:
             if len(tr.data) < WINDOW_SAMPLES * (tr.stats.sampling_rate / SAMPLING_RATE) + 2:
                 continue
-            tr_raw = tr.copy()
-            tr_raw.data = tr_raw.data.astype(np.float64)  # miniSEED ints would overflow in x**2
-            tr_raw.detrend('linear').detrend('demean')
-            if tr_raw.stats.sampling_rate != SAMPLING_RATE:
-                tr_raw.resample(SAMPLING_RATE)
+            tr_raw = detrend_resample(tr)
             tr_train = preprocess(tr, args.freqmin, args.freqmax)
             band_data, cft = rule_features(tr_raw, args.rule_band)
             sr = tr_train.stats.sampling_rate
-            for s in window_starts(tr_train, t0):
+            for s in window_starts(len(tr_train.data), sr, float(tr_train.stats.starttime - t0)):
                 e = s + WINDOW_SAMPLES
                 w_train = tr_train.data[s:e].astype(np.float32)
                 w_raw = np.asarray(tr_raw.data[s:e], dtype=np.float64)
@@ -392,7 +254,7 @@ def collect(args):
                 # Half-sample tolerance: Raspberry Shake samples sit ~2 ms off the whole second
                 if w_t0 < t0 - 0.5 / sr or w_t1 > t1 + 0.5 / sr or not np.all(np.isfinite(w_train)):
                     continue
-                if any(q_t <= w_t1 and q_t + args.event_coda_sec >= w_t0 for q_t, _, _ in quakes):
+                if overlaps_event(w_t0, w_t1, quakes, args.event_coda_sec):
                     n_quake_dropped += 1
                     continue
                 total = float(np.sum(w_raw ** 2)) or 1.0
@@ -408,7 +270,7 @@ def collect(args):
                     positive = None  # decided below once the reference rms is known
                     method = 'rule:rms'
                 elif args.label_from == 'timeofday':
-                    hour = w_t0.datetime.replace(tzinfo=ZoneInfo('UTC')).astimezone(tz).hour
+                    hour = int(local_hour(w_t0, tz))
                     if args.day_hours[0] <= hour < args.day_hours[1]:
                         positive = True
                     elif args.night_hours[0] <= hour < args.night_hours[1]:
@@ -459,18 +321,10 @@ def collect(args):
     X = np.stack(windows)
     meta = pd.DataFrame(rows)
     if args.label_from == 'timeofday' and args.burst_factor > 0:
-        night = meta['label'] == 0
-        ref = meta[night].groupby('station')['rms'].median()
-        meta['night_rms_ref'] = meta['station'].map(ref)
-        meta['burst_ratio'] = meta['peak'] / meta['night_rms_ref']
-        burst = night & (meta['burst_ratio'] >= args.burst_factor)
-        meta.loc[burst, 'label'] = positive_label
-        meta.loc[burst, 'label_name'] = LABEL_MAP[positive_label]
-        meta.loc[burst, 'window_type'] = LABEL_MAP[positive_label].lower()
-        meta.loc[burst, 'label_method'] = meta.loc[burst, 'label_method'] + f'+burst>={args.burst_factor:g}x'
+        counts_burst = relabel_bursts(meta, positive_label, args.burst_factor)
         print(f'\nNight windows relabeled {LABEL_MAP[positive_label]} as single-vehicle bursts '
               f'(peak >= {args.burst_factor:g} x station night median rms): '
-              + ', '.join(f'{k}={int(v)}' for k, v in burst.groupby(meta['station']).sum().items()))
+              + ', '.join(f'{k}={v}' for k, v in counts_burst.items()))
     if args.label_from == 'rule':
         # Station-relative: one reference per station (site gain and local noise
         # differ), unless a single --reference-rms is given for all of them.
@@ -491,31 +345,19 @@ def collect(args):
               + ', '.join(f'{k}={v:.1f}' for k, v in refs.items()))
     y = meta['label'].to_numpy(dtype=np.int64)
 
-    out = Path(args.out)
-    out.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    wf, lf, mf = (out / f'{prefix}_waveforms_{stamp}.npy', out / f'{prefix}_labels_{stamp}.npy',
-                  out / f'{prefix}_metadata_{stamp}.csv')
-    np.save(wf, X)
-    np.save(lf, y)
-    meta.to_csv(mf, index=False)
-
+    paths = write_dataset(args.out, prefix, X, y, meta, summary_lines=[
+        f'Command: {" ".join(sys.argv)}',
+        f'Range: {t0} -> {t1}',
+        f'Window: {WINDOW_SEC:.0f} s @ {SAMPLING_RATE:g} Hz, no overlap, bandpass {args.freqmin}-{args.freqmax} Hz',
+        f'Positive class: {args.class_name} (label {positive_label}), method {args.label_from}',
+    ])
     counts = meta.groupby(['station', 'label_name']).size().unstack(fill_value=0)
-    summary = out / f'{prefix}_summary_{stamp}.txt'
-    with open(summary, 'w') as f:
-        f.write(f'Continuous-window dataset ({prefix})\n{"=" * 60}\n\n')
-        f.write(f'Generated: {datetime.now():%Y-%m-%d %H:%M:%S}\n')
-        f.write(f'Command: {" ".join(sys.argv)}\n\n')
-        f.write(f'Range: {t0} -> {t1}\nWindow: {WINDOW_SEC:.0f} s @ {SAMPLING_RATE:g} Hz, no overlap, '
-                f'bandpass {args.freqmin}-{args.freqmax} Hz\n')
-        f.write(f'Positive class: {args.class_name} (label {positive_label}), method {args.label_from}\n\n')
-        f.write('Windows per station and label:\n')
-        f.write(counts.to_string() + '\n\n')
-        f.write(f'Files:\n  {wf.name}  {X.shape} {X.dtype}\n  {lf.name}\n  {mf.name}\n')
-    print(f'\nSaved {len(y)} windows -> {wf.name}\n{counts.to_string()}')
+    print(f'\nSaved {len(y)} windows -> {paths["waveforms"].name}\n{counts.to_string()}')
+    stamp = paths['waveforms'].stem.split('_waveforms_')[-1]
 
     if args.review_sheet:
-        write_review_sheet(X, meta, positive_label, args.review_sheet, out / f'{prefix}_review_{stamp}', rng)
+        write_review_sheet(X, meta, positive_label, args.review_sheet,
+                           Path(args.out) / f'{prefix}_review_{stamp}', rng)
 
 
 def write_review_sheet(X, meta, positive_label, n, stem, rng):

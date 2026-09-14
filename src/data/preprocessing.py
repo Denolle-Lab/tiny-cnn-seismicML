@@ -2,41 +2,12 @@
 Data preprocessing utilities for seismic signals.
 
 This module provides functions for loading, preprocessing, and augmenting
-seismogram data for training and inference.
+seismogram data for training and inference. It does not import torch;
+the PyTorch ``SeismicDataset`` lives in ``dataset.py``.
 """
 
 import numpy as np
 from scipy import signal
-import torch
-from torch.utils.data import Dataset
-
-
-class SeismicDataset(Dataset):
-    """
-    PyTorch Dataset for seismic waveforms.
-    
-    Args:
-        waveforms (np.ndarray): Array of waveforms, shape (N, C, L)
-        labels (np.ndarray): Array of labels, shape (N,)
-        transform (callable, optional): Optional transform to apply
-    """
-    
-    def __init__(self, waveforms, labels, transform=None):
-        self.waveforms = waveforms
-        self.labels = labels
-        self.transform = transform
-        
-    def __len__(self):
-        return len(self.labels)
-    
-    def __getitem__(self, idx):
-        waveform = self.waveforms[idx]
-        label = self.labels[idx]
-        
-        if self.transform:
-            waveform = self.transform(waveform)
-        
-        return torch.FloatTensor(waveform), torch.LongTensor([label]).squeeze()
 
 
 def normalize_waveform(waveform, method='standard'):

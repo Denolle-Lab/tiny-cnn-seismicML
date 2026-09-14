@@ -42,7 +42,7 @@ This directory contains notebooks for creating labeled training data.
 `labeled_data/` - Contains all labeled datasets with timestamps:
 - Windowed waveforms (numpy arrays)
 - Labels: global integers from `src/data/labels.py` (0 Noise, 1 Traffic, 2 Earthquake, 3 Avalanche, 4 Train, 5 Aircraft); the training notebook remaps to the model's class subset
-- `<NET>_<class>_*` file sets from `scripts/collect_continuous_windows.py` (continuous data, 60 s windows, provisional labels + review sheet) follow the same layout
+- `<NET>_<class>_*` file sets from `scripts/collect_continuous_windows.py` (continuous data, 60 s windows, provisional labels + review sheet) follow the same layout; `src/data/collect.py` holds the shared fetch / preprocess / write functions for any new collector
 - Metadata with extracted features
 
 ## Next Steps
