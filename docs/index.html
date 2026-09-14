@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tiny-cnn-seismicML</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@87.5,500;87.5,700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root { --paper:#F4F6F4; --ink:#1B2229; --muted:#5A6670; --rule:#D3DAD6; --panel:#EBEFEC; --train:#7b3f9e; --traffic:#d9822b; --noise:#2b6ca3; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --paper:#141A1E; --ink:#E6EAE7; --muted:#97A3A9; --rule:#2C353B; --panel:#1C2429; --train:#b48ad6; --traffic:#e9a15c; --noise:#6fa8dc; } }
+  :root[data-theme="dark"] { --paper:#141A1E; --ink:#E6EAE7; --muted:#97A3A9; --rule:#2C353B; --panel:#1C2429; --train:#b48ad6; --traffic:#e9a15c; --noise:#6fa8dc; }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif; font-size:15.5px; line-height:1.5; padding-block:40px 70px; padding-inline:20px; }
+  main { max-width:760px; margin:0 auto; }
+  h1 { font-family:"Archivo","Helvetica Neue",Arial,sans-serif; font-stretch:87.5%; font-size:34px; margin:6px 0 4px; line-height:1.1; }
+  h2 { font-family:"Archivo","Helvetica Neue",Arial,sans-serif; font-stretch:87.5%; font-size:20px; margin:28px 0 10px; }
+  .eyebrow { font-family:"IBM Plex Mono",Menlo,monospace; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .lede { color:var(--muted); margin:0 0 6px; max-width:64ch; }
+  p { max-width:66ch; margin:0 0 12px; }
+  .links { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin:18px 0 6px; }
+  .links a { display:block; padding:14px 16px; border:1px solid var(--rule); border-radius:4px; color:inherit; text-decoration:none; background:var(--panel); }
+  .links a:hover { border-color:var(--ink); }
+  .links strong { display:block; font-family:"Archivo",sans-serif; font-stretch:87.5%; font-size:17px; margin-bottom:4px; }
+  .links span { color:var(--muted); font-size:13.5px; }
+  table { border-collapse:collapse; width:100%; font-size:14px; font-variant-numeric:tabular-nums; margin:6px 0 14px; }
+  th, td { text-align:left; vertical-align:top; padding:7px 10px 7px 0; border-bottom:1px solid var(--rule); }
+  th { font-family:"IBM Plex Mono",Menlo,monospace; font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:500; }
+  code { font-family:"IBM Plex Mono",Menlo,monospace; font-size:13.5px; }
+  footer { margin-top:36px; padding-top:14px; border-top:1px solid var(--rule); font-size:12.5px; color:var(--muted); }
+  a { color:var(--train); }
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">Denolle Lab · University of Washington · SeismicML with Concord Consortium</div>
+  <h1>tiny-cnn-seismicML</h1>
+  <p class="lede">Small convolutional networks that tell earthquakes, traffic and trains apart in 60 s of ground motion from the seismometers around Anchorage, built to run in a middle-school browser.</p>
+
+  <div class="links">
+    <a href="review/"><strong>Review the labels</strong><span>Agree or disagree with each labeled window, download your decisions as a CSV.</span></a>
+    <a href="label_verification_2026-09-14.html"><strong>Label verification report</strong><span>Every labeling rule, its parameters, the counts, and the figures to check them against.</span></a>
+    <a href="https://github.com/Denolle-Lab/tiny-cnn-seismicML"><strong>Code and issues</strong><span>Collectors, label scheme, models, and the roadmap (issue #13).</span></a>
+  </div>
+
+  <h2>Classes</h2>
+  <table>
+    <tr><th>Label</th><th>Class</th><th>Source</th><th>Status</th></tr>
+    <tr><td>0</td><td>Noise</td><td>quiet hours at the same stations</td><td>collected</td></tr>
+    <tr><td>1</td><td>Traffic</td><td>Romig Middle School Shakes (AM.R1796, R3130), daytime and night vehicle passes</td><td>collected, under review</td></tr>
+    <tr><td>2</td><td>Earthquake</td><td>Alaska Earthquake Center stations, catalogued events with P picks</td><td>trained (compact-v2 in CLUE)</td></tr>
+    <tr><td>3</td><td>Avalanche</td><td>to be collected</td><td>planned</td></tr>
+    <tr><td>4</td><td>Train</td><td>AK.K222 at Potter, 100 m from the Alaska Railroad, timetable search</td><td>collected, under review</td></tr>
+    <tr><td>5</td><td>Aircraft</td><td>Shakes near Ted Stevens Anchorage International</td><td>in progress</td></tr>
+  </table>
+
+  <h2>How the data are made</h2>
+  <p>Continuous data are pulled after the fact from the public FDSN archives (Raspberry Shake for the AM network, IRIS for AK), cut into non-overlapping 60 s windows at 100 Hz, band-passed 2 to 20 Hz, and labeled by rules: time of day, night bursts, timetable search, and catalog exclusion of earthquakes. One command per class regenerates the sets on any machine; waveform files are never published, only plots and metadata.</p>
+
+  <footer>
+    <p>Raspberry Shake data: "Data powered by Raspberry Shake, S.A., a citizen-science project. Please visit <a href="https://raspberryshake.org">raspberryshake.org</a> and join the Citizen Science Community today! DOI: <a href="https://doi.org/10.7914/SN/AM">10.7914/SN/AM</a>." Alaska Earthquake Center data via IRIS: DOI <a href="https://doi.org/10.7914/SN/AK">10.7914/SN/AK</a>. Supported by NSF; partner school Romig Middle School, Anchorage School District.</p>
+  </footer>
+</main>
+</body>
+</html>
