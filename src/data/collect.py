@@ -255,9 +255,9 @@ def label_event_detections(meta, events, positive_label, search_sec=900.0, facto
     whose rms reaches ``factor`` times the median rms of the search span are
     the event. The contiguous run around the maximum (at most ``max_windows``)
     gets ``positive_label``; other windows in the span are ambiguous and are
-    marked ``drop``; windows outside every span keep ``noise_label``. A window
-    already labeled positive by an earlier event is never dropped by a later
-    overlapping span (dense schedules, e.g. aircraft).
+    marked ``drop``; windows outside every span keep ``noise_label``. Windows an
+    earlier event already labeled positive are left out of a later overlapping
+    span's candidates, so dense schedules (aircraft) neither drop nor re-claim them.
 
     ``meta`` needs ``start_time`` (UTC strings), ``rms_band`` (or ``rms``) and ``station``;
     ``events`` is a DataFrame with ``t0`` (UTCDateTime) and ``event_id``.
@@ -284,14 +284,18 @@ def label_event_detections(meta, events, positive_label, search_sec=900.0, facto
                 report.append({'station': station, 'event_id': ev.event_id, 'detected': False, 'peak_ratio': np.nan,
                                'n_windows': 0})
                 continue
-            already = span[meta.loc[span, 'label'].to_numpy() == positive_label]  # from an earlier, overlapping event
+            # windows an earlier, overlapping event already claimed stay with it
+            span = span[meta.loc[span, 'label'].to_numpy() != positive_label]
+            if len(span) < 3:
+                report.append({'station': station, 'event_id': ev.event_id, 'detected': False, 'peak_ratio': np.nan,
+                               'n_windows': 0})
+                continue
             rms = meta.loc[span, rms_col].to_numpy()
             ref = float(np.median(rms))
             ratio = rms / ref if ref > 0 else np.zeros_like(rms)
             k = int(np.argmax(ratio))
             if ratio[k] < factor:
                 meta.loc[span, 'drop'] = True  # scheduled but not seen: ambiguous, keep out of Noise
-                meta.loc[already, 'drop'] = False
                 report.append({'station': station, 'event_id': ev.event_id, 'detected': False,
                                'peak_ratio': float(ratio[k]), 'n_windows': 0})
                 continue
@@ -303,7 +307,6 @@ def label_event_detections(meta, events, positive_label, search_sec=900.0, facto
             hit = span[lo:hi + 1]
             meta.loc[span, 'drop'] = True
             meta.loc[hit, 'drop'] = False
-            meta.loc[already, 'drop'] = False
             meta.loc[hit, 'label'] = positive_label
             meta.loc[hit, 'label_name'] = LABEL_MAP[positive_label]
             meta.loc[hit, 'window_type'] = LABEL_MAP[positive_label].lower()
