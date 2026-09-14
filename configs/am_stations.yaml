@@ -1,0 +1,52 @@
+# Raspberry Shake (AM network) stations used for the anthropogenic classes
+# (issues #10, #11, #12). Data comes from https://data.raspberryshake.org
+# (FDSN) after the fact; the schools cannot stream their Shakes live.
+#
+# Station-to-school matches come from docs/am_station_school_matches.csv
+# (ASD school points vs. AM station coordinates). Raspberry Shake snaps
+# published latitudes to a 1 km grid, so distances below 0.5 km are as
+# good as the metadata gets. Confirm codes with the school's Shake dashboard.
+
+stations:
+  - code: R1796
+    role: primary
+    school: Romig Middle School            # SeismicML partner school, 2500 Minnesota Dr
+    distance_km: 0.12
+    sensors: RS4D (EHZ geophone + ENE/ENN/ENZ accelerometer), 100 Hz
+    installed: 2023-10-04
+    notes: >
+      Closest match of all Anchorage AM stations to Romig. Daytime rms
+      ~1.6x R4017 on 2026-09-09; the site sits on Minnesota Dr.
+  - code: R3130
+    role: primary
+    school: Romig Middle School / West High School (shared campus)
+    distance_km: 0.45
+    sensors: RS1D (EHZ only), 100 Hz
+    installed: 2023-10-03
+  - code: R4017
+    role: contrast
+    school: Mears Middle School (0.69 km)
+    sensors: RS3D (EHE/EHN/EHZ), 100 Hz
+    installed: 2023-10-02
+    notes: >
+      Station used in the original rule-based notebook and in the
+      collector's calibration (docs in scripts/collect_continuous_windows.py).
+
+# Reproducible pull:  python scripts/collect_continuous_windows.py --config configs/am_stations.yaml
+# One run per day for every station whose role is in `roles`; output goes to
+# notebooks/02_labeling/labeled_data/<prefix>_{waveforms,labels,metadata}_<stamp>.*
+collection:
+  network: AM
+  roles: [primary]        # stations above to pull (R1796, R3130)
+  class_name: Traffic
+  label_from: timeofday
+  tz: America/Anchorage
+  day_hours: [7, 19]      # -> Traffic
+  night_hours: [1, 5]     # -> Noise, except isolated vehicle passes (below)
+  burst_factor: 20        # night window with raw peak >= 20 x station night median rms -> Traffic
+  exclude_events: true    # drop windows overlapping USGS M>=2 events within 2 deg (origin to +120 s)
+  review_sheet: 24
+  days:
+    - 2026-09-09          # Wednesday (local calendar day in tz)
+    - 2026-09-12          # Saturday
+  prefix_pattern: "AM_romig_traffic_{date}"
