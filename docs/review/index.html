@@ -33,7 +33,7 @@
   .card img { width:100%; height:auto; display:block; background:#fff; }
   .meta { padding:8px 10px 6px; display:flex; flex-wrap:wrap; gap:4px 10px; font-size:12.5px; align-items:baseline; }
   .tag { font-family:"IBM Plex Mono",Menlo,monospace; font-size:11px; padding:1px 6px; border-radius:3px; color:#fff; }
-  .tag.Noise { background:var(--noise); } .tag.Traffic { background:var(--traffic); } .tag.Train { background:var(--train); }
+  .tag.Noise { background:var(--noise); } .tag.Traffic { background:var(--traffic); } .tag.Train { background:var(--train); } .tag.Aircraft { background:#3a8f5a; }
   .meta .mono { font-family:"IBM Plex Mono",Menlo,monospace; font-size:11.5px; color:var(--muted); }
   .decide { padding:0 10px 10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   .seg { display:inline-flex; border:1px solid var(--rule); border-radius:3px; overflow:hidden; }
@@ -53,13 +53,13 @@
 <main>
   <div class="eyebrow">tiny-cnn-seismicML · label review</div>
   <h1>Do you agree with these labels?</h1>
-  <p class="lede">Each card is one stored 60 s window (2 to 20 Hz, waveform and spectrogram) with the label a rule gave it. Every window starts as <strong>Agree</strong>; click <strong>Disagree</strong> on the ones that look wrong, add a note if you like, then download the CSV. Decisions are kept in this browser until you reset. Look for: Noise quiet with at most small transients; Traffic sustained 5 to 20 Hz energy (day) or one to two 3 to 6 s vehicle passes (night burst); Train a 20 to 40 s spindle with an emergent onset. The <a href="../label_verification_2026-09-14.html">verification report</a> explains each rule.</p>
+  <p class="lede">Each card is one stored 60 s window (2 to 20 Hz; 2 to 45 Hz for the aircraft stations; waveform and spectrogram) with the label a rule gave it. Every window starts as <strong>Agree</strong>; click <strong>Disagree</strong> on the ones that look wrong, add a note if you like, then download the CSV. Decisions are kept in this browser until you reset. Look for: Noise quiet with at most small transients; Traffic sustained 5 to 20 Hz energy (day) or one to two 3 to 6 s vehicle passes (night burst); Train a 20 to 40 s spindle with an emergent onset; Aircraft a 30 to 90 s broadband burst concentrated above 15 Hz, seen at both Turnagain stations. The <a href="../label_verification_2026-09-14.html">verification report</a> explains each rule.</p>
 
   <div class="bar">
     <label>Reviewer <input type="text" id="reviewer" placeholder="your name" size="14"></label>
-    <label>Class <select id="f-class"><option value="">all</option><option>Noise</option><option>Traffic</option><option>Train</option></select></label>
-    <label>Rule <select id="f-rule"><option value="">all</option><option>time of day</option><option>night burst</option><option>timetable search</option></select></label>
-    <label>Station <select id="f-station"><option value="">all</option><option>R1796</option><option>R3130</option><option>K222</option></select></label>
+    <label>Class <select id="f-class"><option value="">all</option><option>Noise</option><option>Traffic</option><option>Train</option><option>Aircraft</option></select></label>
+    <label>Rule <select id="f-rule"><option value="">all</option><option>time of day</option><option>night burst</option><option>timetable search</option><option>band rule</option></select></label>
+    <label>Station <select id="f-station"><option value="">all</option><option>R1796</option><option>R3130</option><option>K222</option><option>RFD97</option><option>R9286</option></select></label>
     <label>Show <select id="f-show"><option value="">all</option><option value="disagree">disagreed only</option></select></label>
     <span class="stat" id="stat"></span>
     <button class="primary" id="download">Download CSV</button>

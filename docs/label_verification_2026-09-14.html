@@ -54,15 +54,15 @@
 <main>
 <header>
   <div class="eyebrow">tiny-cnn-seismicML · label verification · 14 Sept 2026</div>
-  <h1>Are the Noise, Traffic and Train labels right?</h1>
-  <p class="lede">Every rule that assigns a label to a 60 s window in the anthropogenic datasets, with the windows it produced, so a reader can check the labels against the data rather than trust the counts. Covers the Romig Middle School station-days (Traffic / Noise), the Potter station-days (Train), and why there is no Aircraft set yet.</p>
+  <h1>Are the Noise, Traffic, Train and Aircraft labels right?</h1>
+  <p class="lede">Every rule that assigns a label to a 60 s window in the anthropogenic datasets, with the windows it produced, so a reader can check the labels against the data rather than trust the counts. Covers the Romig Middle School station-days (Traffic / Noise), the Potter station-days (Train), and the Turnagain station-days under the airport's departure path (Aircraft).</p>
 </header>
 
 <section>
   <div class="verdict">
     <p><strong>Traffic vs Noise at Romig holds up.</strong> Daytime windows carry 3 to 5× the night energy, broadband 3 to 45 Hz with the 5 to 20 Hz road hump; night windows are quiet apart from single vehicle passes, which are now labeled Traffic when they exceed 20× the night level. Two known contaminants are handled: catalogued earthquakes are excluded, and the school building's scheduled machinery is documented but still in the Traffic windows.</p>
     <p><strong>Train at Potter (AK.K222) is clean.</strong> 8 of 8 timetabled passenger passages over two days were found within 2 to 6 min of the estimate, at 12 to 30× the surrounding level, including a pair of passages 11 min apart where two trains met at the siding. Unscheduled spikes at the same station, freight most likely, are currently labeled Noise; that is the open issue for this class.</p>
-    <p><strong>Aircraft: no set.</strong> The only sensor on the airfield is a strong-motion accelerometer sitting at its self-noise floor; the geophones nearest the runways need ADS-B event times, which OpenSky serves only to registered accounts.</p>
+    <p><strong>Aircraft: a first set, weakly labeled.</strong> On a 100 Hz Shake an aircraft is a 30 to 90 s broadband burst above 15 Hz with an emergent rise and decay, heard at both Turnagain stations at once; engine tones and their Doppler glide sit above 50 Hz and do not survive the sampling. A rule on the 20 to 45 Hz band (2.5× the local median, ≥ 15 s active, coincident at 2 stations) gives 64 windows on Wednesday and 21 on Saturday, most of them the night cargo departures. The airfield's strong-motion sensor sees nothing. ADS-B times would confirm these; for now the review page is the check.</p>
   </div>
 </section>
 
@@ -75,7 +75,7 @@
     <tr><td>AM.R3130</td><td>Raspberry Shake RS1D, EHZ geophone, 100 Hz</td><td>Romig / West High campus, 450 m</td><td>same</td><td>Traffic / Noise</td></tr>
     <tr><td>AK.K222</td><td>Strong-motion accelerometer, HNZ, 200 Hz → 100 Hz</td><td>Chapel by the Sea, Potter; 100 m from the Seward line</td><td>same</td><td>Train / Noise</td></tr>
     <tr><td>AK.K204, K220, K208</td><td>Strong-motion accelerometers</td><td>ANC airfield (Signature FBO), Kincaid Park, Spenard</td><td>2026-09-09</td><td>Aircraft feasibility only</td></tr>
-    <tr><td>AM.RFD97, R9286</td><td>Raspberry Shake geophones</td><td>Turnagain, 3 km north of runway 15/33</td><td>2026-09-09</td><td>Aircraft feasibility only</td></tr>
+    <tr><td>AM.RFD97, R9286</td><td>Raspberry Shake geophones, EHZ, 100 Hz</td><td>Turnagain, 3.0 to 3.2 km north of runway 15/33, under its departure path</td><td>Wed 2026-09-09, Sat 2026-09-12</td><td>Aircraft / Noise (stored 2 to 45 Hz)</td></tr>
   </table>
   </div>
   <p>All data are pulled after the fact from the public FDSN archives (Raspberry Shake for AM, IRIS for AK) by <code>scripts/collect_continuous_windows.py</code>. Windows are 60 s, non-overlapping, aligned to whole minutes, at 100 Hz after linear detrend, demean, a 2 s taper, low-pass at 40 Hz when downsampling, and a 2 to 20 Hz bandpass (the convention of the AK earthquake set). Windows within 2 s of a data gap are skipped. Every window carries per-window features computed on the unfiltered, detrended data: raw <code>rms</code> and <code>peak</code>, and <code>rms_band</code> / <code>peak_band</code> in 5 to 30 Hz, plus <code>band_ratio</code>, STA/LTA and kurtosis, all in the metadata CSV.</p>
@@ -90,6 +90,7 @@
     <tr><td>Night burst</td><td>Traffic to a night window whose 5 to 30 Hz peak ≥ 20 × the station's median night 5 to 30 Hz rms</td><td>factor 20</td><td><code>…+burst>=20x</code></td></tr>
     <tr><td>Earthquake exclusion</td><td>Drops any window overlapping a USGS event of M ≥ 2 within 2° of the station, from origin time to +120 s</td><td>minmag 2.0, radius 2°, coda 120 s</td><td>window absent</td></tr>
     <tr><td>Timetable search</td><td>Train to the windows inside ±15 min of a scheduled passage whose 5 to 30 Hz rms ≥ 3 × the median of that span; every run above threshold is kept; the rest of the span is dropped as ambiguous; windows outside every span are Noise</td><td>search 900 s, factor 3, max 6 windows per run</td><td><code>events:search900s,rms>=3x</code></td></tr>
+    <tr><td>Band rule, coincident</td><td>Aircraft to a window whose 20 to 45 Hz rms ≥ 2.5 × the rolling median over ±15 min at its station, with ≥ 15 s of the window above that level, and a positive at ≥ 2 stations within ±1 min; single-station positives dropped; the rest Noise</td><td>band 20 to 45 Hz, local reference 15 min, factor 2.5, active 15 s, coincidence 2; stored band 2 to 45 Hz</td><td><code>rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2</code></td></tr>
   </table>
   </div>
   <p>The timetable is <code>configs/arr_schedule.yaml</code> (Alaska Railroad summer 2026: Coastal Classic 06:45 out / 22:15 back, Glacier Discovery 09:45 / 21:15, Denali Star 08:15 / 20:00, plus per-station passage offsets, +30 min to Potter southbound), expanded by <code>scripts/make_train_events.py</code>. Labels are the global integers of <code>src/data/labels.py</code>: 0 Noise, 1 Traffic, 4 Train.</p>
@@ -106,9 +107,11 @@
     <tr><td>Sat 09-12</td><td>R3130</td><td class="num">223</td><td class="num">699</td><td class="num">14</td><td class="num"></td><td class="num">21 / 0</td></tr>
     <tr><td>Wed 09-09</td><td>K222</td><td class="num">1,228</td><td class="num"></td><td class="num"></td><td class="num">7</td><td class="num">22 / 110</td></tr>
     <tr><td>Sat 09-12</td><td>K222</td><td class="num">1,233</td><td class="num"></td><td class="num"></td><td class="num">6</td><td class="num">21 / 110</td></tr>
+    <tr><td>Wed 09-09</td><td>RFD97 + R9286</td><td class="num">2,690</td><td class="num"></td><td class="num"></td><td class="num">64 Aircraft</td><td class="num">48 / 72 single-station</td></tr>
+    <tr><td>Sat 09-12</td><td>RFD97 + R9286</td><td class="num">2,750</td><td class="num"></td><td class="num"></td><td class="num">21 Aircraft</td><td class="num">42 / 67 single-station</td></tr>
   </table>
   </div>
-  <p>Totals: 868 Noise and 2,895 Traffic windows at Romig; 13 Train windows and 2,461 Noise windows at Potter (the config for the season pull keeps 5 % of the Noise). The earthquakes dropped on 09-09 include an M2.9 at 40 km at 10:35 local that sat inside a Traffic window with P and S visible.</p>
+  <p>Totals: 868 Noise and 2,895 Traffic windows at Romig; 13 Train windows and 2,461 Noise windows at Potter (the config for the season pull keeps 5 % of the Noise); 85 Aircraft windows at Turnagain. The earthquakes dropped on 09-09 include an M2.9 at 40 km at 10:35 local that sat inside a Traffic window with P and S visible.</p>
 </section>
 
 <section>
@@ -161,21 +164,34 @@
 </section>
 
 <section>
-  <h2>7. Why there is no Aircraft set</h2>
+  <h2>7. Aircraft at Turnagain</h2>
   <figure>
     <img src="figures/report_sensor_comparison.png" alt="Diurnal 5 to 30 Hz rms at four stations with different sensors">
-    <figcaption><strong>Figure 9. 5 to 30 Hz rms per minute on Wednesday at four stations.</strong> The airfield accelerometer (AK.K204, 530 m from the runways) is flat at 135 to 187 counts all day with a Gaussian peak/rms of 3.3: instrument self-noise, no ground motion. The Potter accelerometer (K222) is quieter still between trains. The two geophones show the diurnal cycle and, at RFD97 (3 km from runway 15/33), no feature that can be tied to aircraft without event times.</figcaption>
+    <figcaption><strong>Figure 9. 5 to 30 Hz rms per minute on Wednesday at four stations.</strong> The airfield accelerometer (AK.K204, 530 m from the runways) is flat at 135 to 187 counts all day with a Gaussian peak/rms of 3.3: instrument self-noise. Strong-motion sensors cannot see aircraft; the two Turnagain geophones (RFD97, R9286; 3 km north of runway 15/33, under its departure path) can.</figcaption>
   </figure>
-  <p>Strong-motion sensors cannot see aircraft. The geophones under the departure path (RFD97, R9286) may, but only ADS-B times say which minutes to look at; OpenSky serves flight history to registered accounts only. <code>scripts/fetch_flights_opensky.py</code> writes the events CSV from such an account, and the timetable search rule above then applies unchanged. Aircraft also couple in above 20 Hz, so the stored 2 to 20 Hz windows may not carry them; the review sheet's raw spectrogram is the place to look first.</p>
+  <figure>
+    <img src="figures/report_aircraft_hour.png" alt="One hour of raw spectrograms at RFD97 and R9286, 0 to 50 Hz">
+    <figcaption><strong>Figure 10. Raw 0 to 50 Hz spectrograms, both Turnagain stations, 12:00 to 13:00 local on Wednesday.</strong> Two broadband events at 30 to 50 Hz near minutes 42 and 45 appear at both stations, 1 km apart, which a vehicle cannot do. Horizontal lines (26, 34 Hz) are machinery.</figcaption>
+  </figure>
+  <figure>
+    <img src="figures/report_aircraft_zoom.png" alt="Eight minutes at 0.1 Hz resolution around the two aircraft events">
+    <figcaption><strong>Figure 11. The same two events at 0.1 Hz resolution, 12:40 to 12:48 local.</strong> Each is an 80 s broadband burst at 15 to 50 Hz with an emergent rise and decay: two departures on runway 33 climbing over Turnagain two minutes apart. No tonal Doppler glide is visible; engine tones sit above the 50 Hz Nyquist of a Shake, so what survives is jet noise, above the road-traffic band and twenty times longer than a car.</figcaption>
+  </figure>
+  <figure>
+    <img src="figures/report_aircraft_candidates.png" alt="Twenty-four windows labeled Aircraft by the band rule">
+    <figcaption><strong>Figure 12. 24 of the 64 windows the band rule labeled Aircraft on Wednesday</strong> (20 to 45 Hz rms ≥ 2.5× the local median, ≥ 15 s active, coincident at both stations). Band ratio here is the 20 to 45 Hz share of the energy. Most are the night cargo departures (00 to 05 local, 38 of 64). Two impulsive windows at RFD97 (09:05, kurtosis 9; 18:46, kurtosis 31) do not fit the signature and are candidates for Disagree.</figcaption>
+  </figure>
+  <div class="check risk"><span class="k">Label risk: weak labels and the training band</span> These windows are labeled by signal shape and coincidence, not by a flight record; ADS-B times from an OpenSky account (<code>scripts/fetch_flights_opensky.py</code>) would confirm them. The aircraft energy lies above 20 Hz, so this set is stored with a 2 to 45 Hz band; the earthquake and traffic sets use 2 to 20 Hz. A Human model that includes Aircraft needs one band for all of its classes, and the CLUE tile's preprocessing has to match it.</div>
 </section>
 
 <section>
   <h2>8. Reproduce and review</h2>
   <pre>python scripts/collect_continuous_windows.py --config configs/am_stations.yaml     # Romig Traffic / Noise
 python scripts/collect_continuous_windows.py --config configs/train_stations.yaml  # K222 Train
+python scripts/collect_continuous_windows.py --config configs/aircraft_stations.yaml  # Turnagain Aircraft
 python scripts/plot_am_diagnostics.py --config configs/am_stations.yaml --out docs/figures
 python scripts/plot_label_report_figures.py --train-dir &lt;dir with AK_train_full_* and AK_k222_all_*&gt; --out docs/figures</pre>
   <p>Each run writes <code>&lt;prefix&gt;_waveforms_&lt;stamp&gt;.npy</code>, <code>_labels_</code>, <code>_metadata_.csv</code>, a summary, an events report (<code>_events_report.csv</code>) in timetable mode, and with <code>--review-sheet N</code> a PNG grid of N random positive windows plus a CSV with a blank <code>keep</code> column. Marking <code>keep</code> 0 / 1 there is the manual pass; the metadata's <code>reviewed</code> and <code>review_label</code> columns are where those decisions belong. Waveform files are never committed (Raspberry Shake terms forbid redistribution; the archives regenerate them bit for bit).</p>
-  <p>Repo: <a href="https://github.com/Denolle-Lab/tiny-cnn-seismicML">Denolle-Lab/tiny-cnn-seismicML</a>. Issues: #12 traffic, #10 train, #11 aircraft, #13 roadmap, #18 the train/test leakage in the earthquake model's reported accuracy (a training-split issue, not a labeling one).</p>
+  <p>Review the labels window by window at <a href="review/">review/</a> (Agree / Disagree, CSV download; <code>scripts/apply_review.py</code> merges the CSV back). Repo: <a href="https://github.com/Denolle-Lab/tiny-cnn-seismicML">Denolle-Lab/tiny-cnn-seismicML</a>. Issues: #12 traffic, #10 train, #11 aircraft, #13 roadmap, #18 the train/test leakage in the earthquake model's reported accuracy (a training-split issue, not a labeling one).</p>
 </section>
 </main>

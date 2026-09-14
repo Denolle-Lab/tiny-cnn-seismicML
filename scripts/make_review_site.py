@@ -76,6 +76,9 @@ def main():
     p.add_argument('--n-noise', type=int, default=40, help='Noise windows per Romig station (time of day)')
     p.add_argument('--n-traffic', type=int, default=40, help='Traffic windows per Romig station (time of day)')
     p.add_argument('--n-k222-noise', type=int, default=20)
+    p.add_argument('--aircraft-dir', default=None, help='Directory with AM_aircraft_* sets (all Aircraft windows shown)')
+    p.add_argument('--aircraft-prefixes', nargs='+', default=['AM_aircraft_2026-09-09', 'AM_aircraft_2026-09-12'])
+    p.add_argument('--n-aircraft-noise', type=int, default=10, help='Noise windows per aircraft station-day')
     p.add_argument('--out', default=str(REPO_ROOT / 'docs' / 'review'))
     p.add_argument('--seed', type=int, default=7)
     args = p.parse_args()
@@ -85,13 +88,16 @@ def main():
 
     sets = [load(args.labeled_dir, pre) for pre in args.traffic_prefixes]
     sets += [load(args.train_dir, pre) for pre in args.train_prefixes]
+    if args.aircraft_dir:
+        sets += [load(args.aircraft_dir, pre) for pre in args.aircraft_prefixes]
 
     picks = []  # (X, meta row) selections
     for X, m in sets:
         m = m.copy()
         m['rule'] = np.where(m.label_method.str.contains('burst'), 'night burst',
                              np.where(m.label_method.str.startswith('events'), 'timetable search',
-                                      np.where(m.label_method.str.startswith('timeofday'), 'time of day', 'other')))
+                                      np.where(m.label_method.str.startswith('timeofday'), 'time of day',
+                                               np.where(m.label_method.str.startswith('rule'), 'band rule', 'other'))))
         for station, g in m.groupby('station'):
             groups = {
                 ('Noise', 'time of day'): args.n_noise,
@@ -99,6 +105,8 @@ def main():
                 ('Traffic', 'night burst'): None,           # all
                 ('Train', 'timetable search'): None,        # all
                 ('Noise', 'timetable search'): args.n_k222_noise,
+                ('Aircraft', 'band rule'): None,            # all
+                ('Noise', 'band rule'): args.n_aircraft_noise,
             }
             for (cls, rule), n in groups.items():
                 idx = g.index[(g.label_name == cls) & (g.rule == rule)].to_numpy()

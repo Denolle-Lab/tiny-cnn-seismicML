@@ -128,7 +128,19 @@ def parse_args():
     p.add_argument('--reference-rms', type=float, default=None,
                    help='Reference rms (counts); default: 10th percentile of this record')
     p.add_argument('--rule-band', type=float, nargs=2, default=(5.0, 30.0), metavar=('LO', 'HI'),
-                   help='Band for the diagnostic band_ratio / STA/LTA / kurtosis columns')
+                   help='Band for rms_band / peak_band / band_ratio / STA/LTA / kurtosis (5-30 Hz for traffic and '
+                        'trains; 20-45 Hz for aircraft, whose jet noise sits above the road-traffic band)')
+    p.add_argument('--rule-reference', default='station_p10', choices=['station_p10', 'local'],
+                   help="rule: reference rms per station = 10th percentile of the record (station_p10, a quiet "
+                        "floor; right for sustained daytime traffic) or the rolling median over +/- "
+                        "--rule-local-min minutes (local; right for 1-2 min excursions such as aircraft)")
+    p.add_argument('--rule-local-min', type=float, default=15.0)
+    p.add_argument('--rule-coincidence', type=int, default=1,
+                   help='rule: keep a positive only if at least this many stations have a positive within +/- 1 min '
+                        '(an aircraft is heard at every station under its path; a car at one); the others are dropped')
+    p.add_argument('--rule-min-active-sec', type=float, default=0.0,
+                   help='rule: also require this many seconds of the window with 1 s band rms >= factor x reference '
+                        '(an aircraft pass is a 60-90 s broadband burst; a car is 3-6 s)')
 
     p.add_argument('--burst-factor', type=float, default=20.0,
                    help='timeofday: night window with raw peak >= factor x station median night rms -> class '
@@ -190,7 +202,8 @@ def runs_from_config(args):
         # Any collection key that names a flag overrides it, so the YAML can
         # carry every setting that changes the output (reproducible pull).
         for key in ('channel', 'chunk_hours', 'events', 'event_pad_sec', 'event_search_sec', 'event_detect_factor',
-                    'event_offsets', 'noise_keep', 'rule_rms_factor', 'reference_rms',
+                    'event_offsets', 'noise_keep', 'rule_rms_factor', 'rule_reference', 'rule_local_min',
+                    'rule_min_active_sec', 'rule_coincidence', 'reference_rms',
                     'rule_band', 'tz', 'day_hours', 'night_hours', 'burst_factor', 'exclude_events',
                     'event_minmag', 'event_radius_deg', 'event_coda_sec', 'freqmin', 'freqmax',
                     'review_sheet', 'seed'):
@@ -270,7 +283,7 @@ def collect(args):
     client = make_client(args.network, args.fdsn)
     print(f'FDSN: {client.base_url}')
 
-    windows, rows = [], []
+    windows, rows, band_secs = [], [], []   # band_secs: 1 s rms of the rule band per window, for the duration test
     for station in args.station:
         print(f'\n{args.network}.{station}')
         channel, (lat, lon, native_sr) = pick_vertical_channel(client, args.network, station, t0, t1, args.channel)
@@ -337,6 +350,7 @@ def collect(args):
                     positive, method = True, 'all'
                 label = positive_label if positive else 0
                 windows.append(w_train)
+                band_secs.append(np.sqrt(np.mean(w_band[:int(WINDOW_SEC) * int(sr)].reshape(int(WINDOW_SEC), -1) ** 2, axis=1)))
                 rows.append({
                     'window_id': len(rows),
                     'event_id': event_id,
@@ -410,18 +424,42 @@ def collect(args):
         # differ), unless a single --reference-rms is given for all of them.
         if args.reference_rms:
             meta['reference_rms'] = float(args.reference_rms)
+        elif args.rule_reference == 'local':
+            k = int(args.rule_local_min)  # windows are one minute, so the rolling span is 2k + 1 windows
+            meta['reference_rms'] = meta.groupby('station')['rms_band'].transform(
+                lambda r: r.rolling(2 * k + 1, center=True, min_periods=k).median())
         else:
             meta['reference_rms'] = meta.groupby('station')['rms_band'].transform(lambda r: np.percentile(r, 10))
-        positive = meta['rms_band'] >= args.rule_rms_factor * meta['reference_rms']
+        env = np.stack(band_secs)  # (n_windows, 60) 1 s band rms
+        meta['band_active_sec'] = (env >= args.rule_rms_factor * meta['reference_rms'].to_numpy()[:, None]).sum(axis=1)
+        positive = (meta['rms_band'] >= args.rule_rms_factor * meta['reference_rms']) & \
+                   (meta['band_active_sec'] >= args.rule_min_active_sec)
+        if args.rule_coincidence > 1 and meta['station'].nunique() >= args.rule_coincidence:
+            t = np.array([float(UTCDateTime(x)) for x in meta['start_time']])
+            pos_by_station = {st: t[(meta['station'] == st).to_numpy() & positive.to_numpy()]
+                              for st in meta['station'].unique()}
+            n_coinc = np.zeros(len(meta), dtype=int)
+            for i in np.flatnonzero(positive.to_numpy()):
+                n_coinc[i] = sum(np.any(np.abs(tt - t[i]) <= 60.0) for tt in pos_by_station.values())
+            meta['coincident_stations'] = n_coinc
+            lonely = positive & (meta['coincident_stations'] < args.rule_coincidence)
+            print(f'  coincidence: {int(lonely.sum())} single-station positives dropped, '
+                  f'{int((positive & ~lonely).sum())} kept')
+            keep = ~lonely.to_numpy()
+            X, meta, positive = X[keep], meta[keep].reset_index(drop=True), positive[keep].reset_index(drop=True)
+            meta['window_id'] = np.arange(len(meta))
         meta['label'] = np.where(positive, positive_label, 0)
         meta['label_name'] = meta['label'].map(LABEL_MAP)
         meta['window_type'] = meta['label_name'].str.lower()
-        meta['label_method'] = f'rule:rms>={args.rule_rms_factor}x' + (
-            f'{args.reference_rms:.1f}' if args.reference_rms else 'station_p10')
+        meta['label_method'] = f'rule:rms{args.rule_band[0]:g}-{args.rule_band[1]:g}Hz>={args.rule_rms_factor}x' + (
+            f'{args.reference_rms:.1f}' if args.reference_rms else
+            (f'local{args.rule_local_min:g}min' if args.rule_reference == 'local' else 'station_p10')) + (
+            f',active>={args.rule_min_active_sec:g}s' if args.rule_min_active_sec > 0 else '') + (
+            f',coincident>={args.rule_coincidence}' if args.rule_coincidence > 1 else '')
         meta['rms_ratio'] = meta['rms_band'] / meta['reference_rms']
-        refs = meta.groupby('station')['reference_rms'].first()
-        print(f'\nRule factor {args.rule_rms_factor}, reference 5-30 Hz rms per station '
-              f'({"given" if args.reference_rms else "10th percentile"}): '
+        refs = meta.groupby('station')['reference_rms'].median()
+        print(f'\nRule factor {args.rule_rms_factor}, {args.rule_band[0]:g}-{args.rule_band[1]:g} Hz, reference rms '
+              f'per station ({"given" if args.reference_rms else args.rule_reference}, median shown): '
               + ', '.join(f'{k}={v:.1f}' for k, v in refs.items()))
     y = meta['label'].to_numpy(dtype=np.int64)
 

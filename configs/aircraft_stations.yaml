@@ -1,0 +1,61 @@
+# Aircraft class (issue #11): Raspberry Shake geophones under the departure
+# path of ANC runway 33, and the rule that finds aircraft in them. Pull with
+#   python scripts/collect_continuous_windows.py --config configs/aircraft_stations.yaml
+#
+# What an aircraft looks like on a Shake at 100 Hz (2026-09-09, 12:42 and
+# 12:44 local, two departures seen at both stations 1 km apart): a 60-90 s
+# broadband burst at 15-50 Hz with an emergent rise and decay. Engine tones
+# and their Doppler glide sit above 50 Hz and do not survive the sampling;
+# what remains is jet noise above the road-traffic band (5-25 Hz, 3-6 s).
+#
+# Rule: 20-45 Hz rms >= 2.5 x the rolling median over +/- 15 min (the
+# daytime urban background, not the night floor), at least 15 s of the window
+# above that level, and the same minute positive at >= 2 stations (a car is
+# heard at one station, an aircraft at every station under its path).
+# 2026-09-09: 64 windows (R9286 38, RFD97 26), 38 of them 00-05 local when
+# the cargo departures run and the background is quiet.
+#
+# Strong-motion stations (AK.K204 on the airfield, K220, K208) sit at their
+# self-noise floor and cannot see aircraft. The Spenard Shakes (R8F48, S909E,
+# R6C15, 1.7 km from the 7/25 ends) and RA110 have served no data this summer.
+#
+# NOTE the training band: freqmax is 45 Hz here because the aircraft energy
+# is above 20 Hz. The AK earthquake set and the Romig traffic set are 2-20 Hz;
+# a Human model that includes Aircraft needs one band for all its classes.
+
+stations:
+  - code: RFD97
+    network: AM
+    role: primary
+    site: Turnagain Elementary, 3.2 km north of runway 15/33
+    sensors: RS geophone EHZ, 100 Hz
+  - code: R9286
+    network: AM
+    role: primary
+    site: Turnagain, 3.0 km north of runway 15/33
+    sensors: RS geophone EHZ, 100 Hz
+  - code: RA110
+    network: AM
+    role: contrast
+    site: Turnagain, 3.0 km; no data summer 2026
+
+collection:
+  network: AM
+  roles: [primary]
+  class_name: Aircraft
+  label_from: rule
+  rule_band: [20, 45]
+  rule_reference: local
+  rule_local_min: 15
+  rule_rms_factor: 2.5
+  rule_min_active_sec: 15
+  rule_coincidence: 2
+  freqmin: 2
+  freqmax: 45
+  exclude_events: true
+  review_sheet: 24
+  tz: America/Anchorage
+  days:
+    - 2026-09-09
+    - 2026-09-12
+  prefix_pattern: "AM_aircraft_{date}"
