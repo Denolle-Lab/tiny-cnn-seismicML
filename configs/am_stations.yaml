@@ -45,6 +45,6 @@ collection:
   night_hours: [1, 5]     # -> Noise
   review_sheet: 24
   days:
-    - 2026-09-09          # Wednesday
+    - 2026-09-09          # Wednesday (local calendar day in tz)
     - 2026-09-12          # Saturday
   prefix_pattern: "AM_romig_traffic_{date}"

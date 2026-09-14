@@ -45,7 +45,7 @@ Examples (from repo root):
 
 import argparse
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from pathlib import Path
 
@@ -88,7 +88,8 @@ def parse_args():
     p.add_argument('--station', default=None, nargs='+', help='One or more station codes')
     p.add_argument('--channel', default=None,
                    help='Channel code (default: first vertical channel found, EHZ/SHZ/HHZ/BHZ)')
-    p.add_argument('--start', default=None, help='UTC start, e.g. 2026-09-09T16:00:00')
+    p.add_argument('--start', default=None, help='UTC start, e.g. 2026-09-09T16:00:00 '
+                                                 '(config days are local calendar days instead)')
     p.add_argument('--end', default=None, help='UTC end')
     p.add_argument('--chunk-hours', type=float, default=6.0, help='Download chunk length (hours)')
     p.add_argument('--fdsn', default=None, help='FDSN base URL or name; default by network')
@@ -131,20 +132,27 @@ def parse_args():
 
 def runs_from_config(args):
     """Expand a station config into one argparse namespace per collection day."""
-    cfg = yaml.safe_load(open(args.config))
+    with open(args.config, encoding='utf-8') as fh:
+        cfg = yaml.safe_load(fh)
     col = cfg['collection']
     roles = set(col.get('roles', ['primary']))
     stations = [st['code'] for st in cfg['stations'] if st.get('role', 'primary') in roles]
     if not stations:
         raise SystemExit(f'No stations with role in {sorted(roles)} in {args.config}')
+    tz = ZoneInfo(col.get('tz', args.tz))
+    utc = ZoneInfo('UTC')
     runs = []
     for day in col['days']:
         day = str(day)[:10]
-        t0 = UTCDateTime(day)
+        # A config day is a local calendar day (midnight to midnight in col.tz),
+        # so the weekday/weekend split and the {date} prefix mean what they say.
+        local0 = datetime.fromisoformat(day).replace(tzinfo=tz)
+        local1 = (local0 + timedelta(days=1)).replace(tzinfo=None).replace(tzinfo=tz)  # DST-safe next midnight
+        t0, t1 = UTCDateTime(local0.astimezone(utc)), UTCDateTime(local1.astimezone(utc))
         run = argparse.Namespace(**vars(args))
         run.network = col.get('network', 'AM')
         run.station = stations
-        run.start, run.end = str(t0), str(t0 + 86400)
+        run.start, run.end = str(t0), str(t1)
         run.class_name = col.get('class_name', 'Traffic')
         run.label_from = col.get('label_from', 'timeofday')
         run.tz = col.get('tz', run.tz)
