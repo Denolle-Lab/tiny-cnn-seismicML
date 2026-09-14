@@ -17,7 +17,8 @@ Usage (from repo root):
 """
 
 import argparse
-from datetime import datetime, timedelta
+import sys
+from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -28,11 +29,13 @@ import numpy as np
 import pandas as pd
 import yaml
 from obspy import UTCDateTime
-from obspy.clients.fdsn import Client
-from obspy.geodetics import gps2dist_azimuth
 from scipy.signal import welch
 
-SR = 100.0
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT))
+from src.data.collect import (SAMPLING_RATE as SR, catalog_events, detrend_resample, fetch_stream,
+                              local_day_bounds, make_client, with_retries)
+
 WIN = 60
 NPERSEG = 1024
 
@@ -50,28 +53,19 @@ def parse_args():
     return p.parse_args()
 
 
-def local_day_bounds(day, tz):
-    t0 = datetime.fromisoformat(day).replace(tzinfo=tz)
-    t1 = (t0 + timedelta(days=1)).replace(tzinfo=None).replace(tzinfo=tz)
-    utc = ZoneInfo('UTC')
-    return UTCDateTime(t0.astimezone(utc)), UTCDateTime(t1.astimezone(utc))
-
-
 def fetch_raw_day(client, station, t0, t1, cache):
-    """Full local day, merged with interpolated gaps, detrended, at 100 Hz; cached as npz."""
+    """Full local day, gaps interpolated, detrended, at 100 Hz; cached as npz."""
     path = cache / f'{station}_{t0.isoformat()[:10]}.npz' if cache else None
     if path and path.exists():
         z = np.load(path)
         return z['data'], UTCDateTime(str(z['start'])), (float(z['lat']), float(z['lon']))
-    inv = client.get_stations(network='AM', station=station, level='station')
+    inv = with_retries(lambda: client.get_stations(network='AM', station=station, level='station'),
+                       f'AM.{station} metadata')
     lat, lon = inv[0][0].latitude, inv[0][0].longitude
-    st = client.get_waveforms('AM', station, '*', 'EHZ', t0 - 5, t1 + 5)
+    from obspy import Stream
+    st = Stream(fetch_stream(client, 'AM', station, 'EHZ', t0, t1))
     st.merge(method=1, fill_value='interpolate')
-    tr = st[0]
-    tr.data = tr.data.astype(np.float64)
-    tr.detrend('linear').detrend('demean')
-    if tr.stats.sampling_rate != SR:
-        tr.resample(SR)
+    tr = detrend_resample(st[0])
     tr.trim(t0, t1, pad=True, fill_value=0.0)
     if path:
         cache.mkdir(parents=True, exist_ok=True)
@@ -93,18 +87,7 @@ def minute_psd(data):
 
 
 def nearby_events(t0, t1, lat, lon, maxradius_deg=2.0, minmag=2.0):
-    try:
-        cat = Client('USGS', timeout=60).get_events(starttime=t0, endtime=t1, latitude=lat, longitude=lon,
-                                                     maxradius=maxradius_deg, minmagnitude=minmag)
-    except Exception:
-        return []
-    out = []
-    for ev in cat:
-        o = ev.preferred_origin() or ev.origins[0]
-        m = ev.preferred_magnitude() or ev.magnitudes[0]
-        dist = gps2dist_azimuth(lat, lon, o.latitude, o.longitude)[0] / 1000
-        out.append({'time': o.time, 'mag': m.mag, 'dist_km': dist})
-    return sorted(out, key=lambda e: e['dist_km'])
+    return [{'time': t, 'mag': m, 'dist_km': d} for t, m, d in catalog_events(t0, t1, lat, lon, minmag, maxradius_deg)]
 
 
 def main():
@@ -120,7 +103,7 @@ def main():
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     cache = Path(args.cache) if args.cache else None
-    client = Client(base_url=args.fdsn, timeout=120)
+    client = make_client('AM', args.fdsn)
 
     raw, events = {}, {}
     for day in days:

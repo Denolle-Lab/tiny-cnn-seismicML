@@ -1,7 +1,10 @@
-"""Data package initialization."""
+"""
+Data package: labels, preprocessing, collection. Importing it does not
+import torch, so the collection scripts run in an environment without it;
+``SeismicDataset`` (PyTorch) is loaded on first access.
+"""
 
 from .preprocessing import (
-    SeismicDataset,
     normalize_waveform,
     bandpass_filter,
     preprocess_seismogram,
@@ -33,3 +36,10 @@ __all__ = [
     'infer_classes',
     'select_classes',
 ]
+
+
+def __getattr__(name):
+    if name == 'SeismicDataset':
+        from .dataset import SeismicDataset
+        return SeismicDataset
+    raise AttributeError(f"module 'src.data' has no attribute '{name}'")
