@@ -396,6 +396,7 @@ def collect(args):
                 ev = events.copy()
             ev['t0'] = ev['t0'] + 60.0 * offsets.get(station, 0.0)
             ev = ev[(ev['t0'] >= t0 - args.event_search_sec) & (ev['t0'] <= t1 + args.event_search_sec)]
+            ev = ev.sort_values('t0', kind='stable')  # earlier event wins an overlap, whatever the CSV order
             labeled, rep = label_event_detections(sub, ev, positive_label, args.event_search_sec,
                                                   args.event_detect_factor)
             parts.append(labeled)

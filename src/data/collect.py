@@ -279,6 +279,7 @@ def label_event_detections(meta, events, positive_label, search_sec=900.0, facto
         meta['event_id'] = None
     report = []
     columns = ['station', 'event_id', 'detected', 'peak_ratio', 'n_windows', 'n_runs']
+    events = events.sort_values('t0', kind='stable')  # "earlier event" means earlier in time, not in the CSV
     for station, idx in meta.groupby('station').groups.items():
         idx = np.asarray(list(idx))
         for ev in events.itertuples():
