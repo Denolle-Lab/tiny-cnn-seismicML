@@ -98,3 +98,94 @@ def test_write_dataset_roundtrip_fixed_and_ragged(tmp_path):
 
     with pytest.raises(ValueError):
         collect.write_dataset(tmp_path, 'bad', X, y[:3], meta)
+
+
+def test_label_event_detections_finds_the_burst_and_drops_the_rest_of_the_span():
+    base = UTCDateTime('2026-09-09T14:00:00')
+    n = 40  # 40 minutes of windows at one station
+    meta = pd.DataFrame({
+        'station': ['S'] * n,
+        'start_time': [str(base + 60 * i) for i in range(n)],
+        'label': [0] * n, 'label_name': ['Noise'] * n, 'window_type': ['noise'] * n,
+        'label_method': ['events'] * n,
+        'rms': [100.0] * n,
+    })
+    meta.loc[[20, 21], 'rms'] = [500.0, 400.0]        # a two-minute passage at 14:20
+    events = pd.DataFrame({'event_id': ['train1', 'ghost'],
+                           't0': [base + 60 * 18, base + 60 * 60]})  # scheduled 14:18; and one outside the data
+    out, rep = collect.label_event_detections(meta, events, positive_label=4, search_sec=300, factor=3.0)
+    assert out.loc[[20, 21], 'label'].tolist() == [4, 4]
+    assert out.loc[20, 'event_id'] == 'train1' and out.loc[20, 'label_name'] == 'Train'
+    span = list(range(13, 24))                        # 14:13 .. 14:23 lie within +/- 5 min of 14:18
+    assert out.loc[[i for i in span if i not in (20, 21)], 'drop'].all()
+    assert not out.loc[[0, 5, 30, 39], 'drop'].any() and (out.loc[[0, 5, 30, 39], 'label'] == 0).all()
+    r = rep.set_index('event_id')
+    assert r.loc['train1', 'detected'] and r.loc['train1', 'n_windows'] == 2 and r.loc['train1', 'peak_ratio'] == 5.0
+    assert not r.loc['ghost', 'detected']
+
+
+def test_label_event_detections_marks_unseen_scheduled_event_ambiguous():
+    base = UTCDateTime('2026-09-09T14:00:00')
+    meta = pd.DataFrame({'station': ['S'] * 20, 'start_time': [str(base + 60 * i) for i in range(20)],
+                         'label': [0] * 20, 'label_name': ['Noise'] * 20, 'window_type': ['noise'] * 20,
+                         'label_method': ['events'] * 20, 'rms': [100.0] * 20})
+    events = pd.DataFrame({'event_id': ['quiet'], 't0': [base + 60 * 10]})
+    out, rep = collect.label_event_detections(meta, events, positive_label=4, search_sec=180, factor=3.0)
+    assert (out['label'] == 0).all()
+    assert out.loc[7:13, 'drop'].all() and not out.loc[[0, 19], 'drop'].any()
+    assert not rep.iloc[0]['detected'] and rep.iloc[0]['peak_ratio'] == 1.0
+
+
+def test_label_event_detections_works_on_a_slice_with_offset_index():
+    base = UTCDateTime('2026-09-09T14:00:00')
+    n = 30
+    meta = pd.DataFrame({'station': ['S'] * n, 'start_time': [str(base + 60 * i) for i in range(n)],
+                         'label': [0] * n, 'label_name': ['Noise'] * n, 'window_type': ['noise'] * n,
+                         'label_method': ['events'] * n, 'rms': [100.0] * n}, index=range(1000, 1000 + n))
+    meta.loc[1015, 'rms'] = 900.0
+    events = pd.DataFrame({'event_id': ['e'], 't0': [base + 60 * 14]})
+    out, rep = collect.label_event_detections(meta, events, positive_label=4, search_sec=240, factor=3.0)
+    assert list(out.index) == list(meta.index)
+    assert out.loc[1015, 'label'] == 4 and rep.iloc[0]['detected']
+
+
+def test_label_event_detections_keeps_positives_from_an_earlier_overlapping_event():
+    base = UTCDateTime('2026-09-09T14:00:00')
+    n = 40
+    meta = pd.DataFrame({'station': ['S'] * n, 'start_time': [str(base + 60 * i) for i in range(n)],
+                         'label': [0] * n, 'label_name': ['Noise'] * n, 'window_type': ['noise'] * n,
+                         'label_method': ['events'] * n, 'rms_band': [100.0] * n})
+    meta.loc[10, 'rms_band'] = 900.0                     # one strong event at 14:10
+    events = pd.DataFrame({'event_id': ['seen', 'unseen'], 't0': [base + 60 * 10, base + 60 * 16]})
+    out, rep = collect.label_event_detections(meta, events, positive_label=5, search_sec=420, factor=3.0)
+    assert out.loc[10, 'label'] == 5 and not out.loc[10, 'drop']   # the second span (14:09 .. 14:23) overlaps it
+    assert rep.set_index('event_id').loc['unseen', 'detected'] == False  # noqa: E712
+
+
+def test_label_event_detections_labels_every_run_above_threshold():
+    # Two trains meeting at a siding: two separate spindles inside one search span
+    base = UTCDateTime('2026-09-09T14:00:00')
+    n = 40
+    meta = pd.DataFrame({'station': ['S'] * n, 'start_time': [str(base + 60 * i) for i in range(n)],
+                         'label': [0] * n, 'label_name': ['Noise'] * n, 'window_type': ['noise'] * n,
+                         'label_method': ['events'] * n, 'rms_band': [10.0] * n})
+    meta.loc[[12, 13], 'rms_band'] = [200.0, 80.0]
+    meta.loc[22, 'rms_band'] = 210.0
+    events = pd.DataFrame({'event_id': ['glacier'], 't0': [base + 60 * 19]})
+    out, rep = collect.label_event_detections(meta, events, positive_label=4, search_sec=900, factor=3.0)
+    assert out.loc[[12, 13, 22], 'label'].tolist() == [4, 4, 4]
+    assert rep.iloc[0]['n_runs'] == 2 and rep.iloc[0]['n_windows'] == 3
+    assert out.loc[[5, 17, 30], 'drop'].all()
+
+
+def test_label_event_detections_report_has_a_fixed_schema_even_with_no_events():
+    base = UTCDateTime('2026-09-09T14:00:00')
+    meta = pd.DataFrame({'station': ['S'] * 5, 'start_time': [str(base + 60 * i) for i in range(5)],
+                         'label': [0] * 5, 'label_name': ['Noise'] * 5, 'window_type': ['noise'] * 5,
+                         'label_method': ['events'] * 5, 'rms_band': [10.0] * 5})
+    _, rep = collect.label_event_detections(meta, pd.DataFrame({'event_id': [], 't0': []}), positive_label=4)
+    assert list(rep.columns) == ['station', 'event_id', 'detected', 'peak_ratio', 'n_windows', 'n_runs']
+    # a span too short to evaluate still reports every column
+    _, rep = collect.label_event_detections(meta, pd.DataFrame({'event_id': ['e'], 't0': [base + 3600]}), positive_label=4,
+                                            search_sec=60)
+    assert rep.iloc[0]['n_runs'] == 0 and rep.iloc[0]['n_windows'] == 0

@@ -11,10 +11,12 @@ label, and write a review sheet so a person can confirm the labels by eye
 before training.
 
 Label sources (``--label-from``):
-  rule       station-relative energy rule: a window is positive when its rms
-             is at least ``--rule-rms-factor`` times a reference rms (the
-             record's 10th percentile, or ``--reference-rms`` from a quiet
-             run of the same station). On AM.R4017 the daytime median rms
+  rule       station-relative energy rule: a window is positive when its
+             5-30 Hz rms is at least ``--rule-rms-factor`` times a reference
+             (the record's 10th percentile, or ``--reference-rms`` from a
+             quiet run of the same station). The band rms, not the raw rms:
+             AK strong-motion accelerometers carry sub-5 Hz self-noise that
+             dominates the raw value. On AM.R4017 the daytime median rms
              is 4.7x the 02-04 AKDT median while 5-30 Hz band ratio and
              STA/LTA barely move, so sustained energy is the usable cue.
   timeofday  local hour in ``--day-hours`` -> ``--class-name``, in
@@ -29,9 +31,18 @@ Label sources (``--label-from``):
 (USGS, M >= ``--event-minmag`` within ``--event-radius-deg``, event time to
 +``--event-coda-sec``), so daytime windows do not carry unlabeled P and S
 arrivals (an M2.9 at 40 km showed up in a "Traffic" window on 2026-09-09).
-  events     a CSV of event times (``--events``); windows overlapping an
-             event get ``--class-name``, others Noise. Use for train
-             timetables (#10) and ADS-B landings/takeoffs (#11)
+  events     a CSV of event times (``--events``, columns ``time`` UTC and
+             optional ``duration_sec``, ``event_id``, ``station``; rows with a
+             station apply to that station only).
+             With ``--event-search-sec 0`` windows overlapping an event get
+             ``--class-name``, others Noise. With a search span (default
+             900 s, for timetables and ADS-B times that are only good to
+             minutes) the windows whose rms reaches ``--event-detect-factor``
+             times the median of the span are the event; the rest of the
+             span is dropped as ambiguous; windows outside every span are
+             Noise. Per-station timing offsets come from
+             ``--event-offsets`` (``STA=+9,STA2=-3`` minutes) so one
+             timetable serves stations along a line (#10, #11).
   all        every window gets ``--class-name`` (e.g. a stretch known to be
              quiet, labeled Noise, or a record you will hand-label)
 
@@ -54,6 +65,7 @@ Examples (from repo root):
 
 import argparse
 import sys
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -71,7 +83,8 @@ from src.data.labels import LABEL_MAP, NAME_TO_LABEL
 from src.data.collect import (
     BANDPASS, SAMPLING_RATE, WINDOW_SAMPLES, WINDOW_SEC,
     catalog_events, detrend_resample, fetch_stream, local_day_bounds, local_hour, make_client,
-    overlaps_event, pick_vertical_channel, preprocess, relabel_bursts, window_starts, write_dataset,
+    label_event_detections, overlaps_event, pick_vertical_channel, preprocess, relabel_bursts, window_starts,
+    write_dataset,
 )
 
 
@@ -97,7 +110,17 @@ def parse_args():
     p.add_argument('--events', default=None,
                    help='CSV with a "time" column (UTC) and optional "duration_sec", "event_id"')
     p.add_argument('--event-pad-sec', type=float, default=30.0,
-                   help='Padding around each event when matching windows')
+                   help='Padding around each event when matching windows (--event-search-sec 0)')
+    p.add_argument('--event-search-sec', type=float, default=900.0,
+                   help='events: search +/- this many seconds around each event time and keep the windows '
+                        'whose rms stands out; 0 = plain overlap with --event-pad-sec')
+    p.add_argument('--event-detect-factor', type=float, default=3.0,
+                   help='events: rms must reach factor x the median rms of the search span')
+    p.add_argument('--noise-keep', type=float, default=1.0,
+                   help='events: keep this fraction of the Noise windows (seeded), all positives kept; '
+                        'a season of one station is mostly Noise otherwise')
+    p.add_argument('--event-offsets', default=None,
+                   help='events: per-station minutes added to event times, e.g. "K208=+9,R1796=+8,K222=+30"')
 
     # Rule thresholds, provisional; the review sheet is where labels get confirmed.
     p.add_argument('--rule-rms-factor', type=float, default=3.0,
@@ -105,7 +128,19 @@ def parse_args():
     p.add_argument('--reference-rms', type=float, default=None,
                    help='Reference rms (counts); default: 10th percentile of this record')
     p.add_argument('--rule-band', type=float, nargs=2, default=(5.0, 30.0), metavar=('LO', 'HI'),
-                   help='Band for the diagnostic band_ratio / STA/LTA / kurtosis columns')
+                   help='Band for rms_band / peak_band / band_ratio / STA/LTA / kurtosis (5-30 Hz for traffic and '
+                        'trains; 20-45 Hz for aircraft, whose jet noise sits above the road-traffic band)')
+    p.add_argument('--rule-reference', default='station_p10', choices=['station_p10', 'local'],
+                   help="rule: reference rms per station = 10th percentile of the record (station_p10, a quiet "
+                        "floor; right for sustained daytime traffic) or the rolling median over +/- "
+                        "--rule-local-min minutes (local; right for 1-2 min excursions such as aircraft)")
+    p.add_argument('--rule-local-min', type=float, default=15.0)
+    p.add_argument('--rule-coincidence', type=int, default=1,
+                   help='rule: keep a positive only if at least this many stations have a positive within +/- 1 min '
+                        '(an aircraft is heard at every station under its path; a car at one); the others are dropped')
+    p.add_argument('--rule-min-active-sec', type=float, default=0.0,
+                   help='rule: also require this many seconds of the window with 1 s band rms >= factor x reference '
+                        '(an aircraft pass is a 60-90 s broadband burst; a car is 3-6 s)')
 
     p.add_argument('--burst-factor', type=float, default=20.0,
                    help='timeofday: night window with raw peak >= factor x station median night rms -> class '
@@ -147,8 +182,14 @@ def runs_from_config(args):
         raise SystemExit(f'No stations with role in {sorted(roles)} in {args.config}')
     tz = col.get('tz', args.tz)
     runs = []
-    for day in col['days']:
-        day = str(day)[:10]
+    days = []
+    for item in col['days']:
+        if isinstance(item, dict):  # {start: ..., end: ...} inclusive range of local days
+            d0, d1 = (datetime.fromisoformat(str(item[k])[:10]).date() for k in ('start', 'end'))
+            days += [str(d0 + timedelta(days=i)) for i in range((d1 - d0).days + 1)]
+        else:
+            days.append(str(item)[:10])
+    for day in days:
         # A config day is a local calendar day (midnight to midnight in col.tz),
         # so the weekday/weekend split and the {date} prefix mean what they say.
         t0, t1 = local_day_bounds(day, tz)
@@ -160,7 +201,9 @@ def runs_from_config(args):
         run.label_from = col.get('label_from', 'timeofday')
         # Any collection key that names a flag overrides it, so the YAML can
         # carry every setting that changes the output (reproducible pull).
-        for key in ('channel', 'chunk_hours', 'events', 'event_pad_sec', 'rule_rms_factor', 'reference_rms',
+        for key in ('channel', 'chunk_hours', 'events', 'event_pad_sec', 'event_search_sec', 'event_detect_factor',
+                    'event_offsets', 'noise_keep', 'rule_rms_factor', 'rule_reference', 'rule_local_min',
+                    'rule_min_active_sec', 'rule_coincidence', 'reference_rms',
                     'rule_band', 'tz', 'day_hours', 'night_hours', 'burst_factor', 'exclude_events',
                     'event_minmag', 'event_radius_deg', 'event_coda_sec', 'freqmin', 'freqmax',
                     'review_sheet', 'seed'):
@@ -179,6 +222,20 @@ def rule_features(tr_raw, band):
     sr = tr_raw.stats.sampling_rate
     cft = classic_sta_lta(tr_band.data, int(1.0 * sr), int(10.0 * sr))
     return tr_band.data, cft
+
+
+def parse_offsets(spec):
+    """'K208=+9,R1796=+8' -> {'K208': 9.0, 'R1796': 8.0} (minutes); accepts a dict from YAML too."""
+    if not spec:
+        return {}
+    if isinstance(spec, dict):
+        return {str(k): float(v) for k, v in spec.items()}
+    out = {}
+    for item in str(spec).split(','):
+        if item.strip():
+            k, v = item.split('=')
+            out[k.strip()] = float(v)
+    return out
 
 
 def load_events(path):
@@ -216,6 +273,8 @@ def collect(args):
         raise SystemExit('--end must be after --start')
     positive_label = NAME_TO_LABEL[args.class_name.lower()]
     prefix = args.prefix or f'{args.network}_{args.class_name.lower()}'
+    if args.label_from == 'events' and args.events and not Path(args.events).is_absolute():
+        args.events = str(REPO_ROOT / args.events) if not Path(args.events).exists() else args.events
     events = load_events(args.events) if args.label_from == 'events' else None
     tz = args.tz
     if args.label_from == 'events' and events is None:
@@ -224,7 +283,7 @@ def collect(args):
     client = make_client(args.network, args.fdsn)
     print(f'FDSN: {client.base_url}')
 
-    windows, rows = [], []
+    windows, rows, band_secs = [], [], []   # band_secs: 1 s rms of the rule band per window, for the duration test
     for station in args.station:
         print(f'\n{args.network}.{station}')
         channel, (lat, lon, native_sr) = pick_vertical_channel(client, args.network, station, t0, t1, args.channel)
@@ -261,7 +320,9 @@ def collect(args):
                 feats = {
                     'rms': float(np.sqrt(np.mean(w_raw ** 2))),
                     'peak': float(np.max(np.abs(w_raw))),
-                    'band_ratio': float(np.sum(w_band ** 2) / total),
+                    'rms_band': float(np.sqrt(np.mean(w_band ** 2))),   # 5-30 Hz: what the rule, burst and
+                    'peak_band': float(np.max(np.abs(w_band))),         # event detection use (accelerometers
+                    'band_ratio': float(np.sum(w_band ** 2) / total),    # carry strong sub-5 Hz self-noise)
                     'stalta_band_max': float(np.max(cft[s:e])),
                     'kurtosis_band': float(kurtosis(w_band)),
                 }
@@ -278,6 +339,9 @@ def collect(args):
                     else:
                         continue  # ambiguous hours are not used
                     method = f'timeofday:{args.tz}:day{args.day_hours[0]}-{args.day_hours[1]}:night{args.night_hours[0]}-{args.night_hours[1]}'
+                elif args.label_from == 'events' and args.event_search_sec > 0:
+                    positive = False  # decided by label_event_detections once all windows are in
+                    method = f'events:{Path(args.events).name}'
                 elif args.label_from == 'events':
                     event_id = overlapping_event(events, w_t0, w_t1, args.event_pad_sec)
                     positive = event_id is not None
@@ -286,6 +350,7 @@ def collect(args):
                     positive, method = True, 'all'
                 label = positive_label if positive else 0
                 windows.append(w_train)
+                band_secs.append(np.sqrt(np.mean(w_band[:int(WINDOW_SEC) * int(sr)].reshape(int(WINDOW_SEC), -1) ** 2, axis=1)))
                 rows.append({
                     'window_id': len(rows),
                     'event_id': event_id,
@@ -320,6 +385,40 @@ def collect(args):
 
     X = np.stack(windows)
     meta = pd.DataFrame(rows)
+    if args.label_from == 'events' and args.event_search_sec > 0:
+        offsets = parse_offsets(args.event_offsets)
+        parts, reports = [], []
+        for station, sub in meta.groupby('station', sort=False):
+            if 'station' in events.columns:  # rows with a blank station apply to every station
+                st = events['station'].fillna('').astype(str).str.strip()
+                ev = events[(st == station) | (st == '')].copy()
+            else:
+                ev = events.copy()
+            ev['t0'] = ev['t0'] + 60.0 * offsets.get(station, 0.0)
+            ev = ev[(ev['t0'] >= t0 - args.event_search_sec) & (ev['t0'] <= t1 + args.event_search_sec)]
+            ev = ev.sort_values('t0', kind='stable')  # earlier event wins an overlap, whatever the CSV order
+            labeled, rep = label_event_detections(sub, ev, positive_label, args.event_search_sec,
+                                                  args.event_detect_factor)
+            parts.append(labeled)
+            reports.append(rep)
+        meta = pd.concat(parts).sort_index()
+        report = pd.concat(reports, ignore_index=True) if reports else pd.DataFrame()
+        keep = ~meta['drop'].to_numpy()
+        n_ambiguous = int((~keep).sum())
+        if args.noise_keep < 1.0:
+            noise = (meta['label'].to_numpy() == 0) & keep
+            keep &= ~noise | (rng.random(len(meta)) < args.noise_keep)
+        X = X[keep]
+        meta = meta[keep].drop(columns=['drop']).reset_index(drop=True)
+        meta['window_id'] = np.arange(len(meta))
+        if len(report):
+            print(f'\nScheduled events: {int(report.detected.sum())} of {len(report)} detected '
+                  f'(rms >= {args.event_detect_factor:g} x span median within +/- {args.event_search_sec:g} s); '
+                  f'{n_ambiguous} ambiguous windows dropped'
+                  + (f', Noise subsampled to {args.noise_keep:g}' if args.noise_keep < 1.0 else ''))
+            print(report.to_string(index=False))
+            Path(args.out).mkdir(parents=True, exist_ok=True)
+            report.to_csv(Path(args.out) / f'{prefix}_events_report.csv', index=False)
     if args.label_from == 'timeofday' and args.burst_factor > 0:
         counts_burst = relabel_bursts(meta, positive_label, args.burst_factor)
         print(f'\nNight windows relabeled {LABEL_MAP[positive_label]} as single-vehicle bursts '
@@ -330,18 +429,42 @@ def collect(args):
         # differ), unless a single --reference-rms is given for all of them.
         if args.reference_rms:
             meta['reference_rms'] = float(args.reference_rms)
+        elif args.rule_reference == 'local':
+            k = int(args.rule_local_min)  # windows are one minute, so the rolling span is 2k + 1 windows
+            meta['reference_rms'] = meta.groupby('station')['rms_band'].transform(
+                lambda r: r.rolling(2 * k + 1, center=True, min_periods=k).median())
         else:
-            meta['reference_rms'] = meta.groupby('station')['rms'].transform(lambda r: np.percentile(r, 10))
-        positive = meta['rms'] >= args.rule_rms_factor * meta['reference_rms']
+            meta['reference_rms'] = meta.groupby('station')['rms_band'].transform(lambda r: np.percentile(r, 10))
+        env = np.stack(band_secs)  # (n_windows, 60) 1 s band rms
+        meta['band_active_sec'] = (env >= args.rule_rms_factor * meta['reference_rms'].to_numpy()[:, None]).sum(axis=1)
+        positive = (meta['rms_band'] >= args.rule_rms_factor * meta['reference_rms']) & \
+                   (meta['band_active_sec'] >= args.rule_min_active_sec)
+        if args.rule_coincidence > 1 and meta['station'].nunique() >= args.rule_coincidence:
+            t = np.array([float(UTCDateTime(x)) for x in meta['start_time']])
+            pos_by_station = {st: t[(meta['station'] == st).to_numpy() & positive.to_numpy()]
+                              for st in meta['station'].unique()}
+            n_coinc = np.zeros(len(meta), dtype=int)
+            for i in np.flatnonzero(positive.to_numpy()):
+                n_coinc[i] = sum(np.any(np.abs(tt - t[i]) <= 60.0) for tt in pos_by_station.values())
+            meta['coincident_stations'] = n_coinc
+            lonely = positive & (meta['coincident_stations'] < args.rule_coincidence)
+            print(f'  coincidence: {int(lonely.sum())} single-station positives dropped, '
+                  f'{int((positive & ~lonely).sum())} kept')
+            keep = ~lonely.to_numpy()
+            X, meta, positive = X[keep], meta[keep].reset_index(drop=True), positive[keep].reset_index(drop=True)
+            meta['window_id'] = np.arange(len(meta))
         meta['label'] = np.where(positive, positive_label, 0)
         meta['label_name'] = meta['label'].map(LABEL_MAP)
         meta['window_type'] = meta['label_name'].str.lower()
-        meta['label_method'] = f'rule:rms>={args.rule_rms_factor}x' + (
-            f'{args.reference_rms:.1f}' if args.reference_rms else 'station_p10')
-        meta['rms_ratio'] = meta['rms'] / meta['reference_rms']
-        refs = meta.groupby('station')['reference_rms'].first()
-        print(f'\nRule factor {args.rule_rms_factor}, reference rms per station '
-              f'({"given" if args.reference_rms else "10th percentile"}): '
+        meta['label_method'] = f'rule:rms{args.rule_band[0]:g}-{args.rule_band[1]:g}Hz>={args.rule_rms_factor}x' + (
+            f'{args.reference_rms:.1f}' if args.reference_rms else
+            (f'local{args.rule_local_min:g}min' if args.rule_reference == 'local' else 'station_p10')) + (
+            f',active>={args.rule_min_active_sec:g}s' if args.rule_min_active_sec > 0 else '') + (
+            f',coincident>={args.rule_coincidence}' if args.rule_coincidence > 1 else '')
+        meta['rms_ratio'] = meta['rms_band'] / meta['reference_rms']
+        refs = meta.groupby('station')['reference_rms'].median()
+        print(f'\nRule factor {args.rule_rms_factor}, {args.rule_band[0]:g}-{args.rule_band[1]:g} Hz, reference rms '
+              f'per station ({"given" if args.reference_rms else args.rule_reference}, median shown): '
               + ', '.join(f'{k}={v:.1f}' for k, v in refs.items()))
     y = meta['label'].to_numpy(dtype=np.int64)
 

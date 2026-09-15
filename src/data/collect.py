@@ -72,7 +72,7 @@ def pick_vertical_channel(client, network, station, t0, t1, requested=None):
         if requested not in chans:
             raise ValueError(f'{network}.{station} has no {requested}; channels: {sorted(chans)}')
         return requested, chans[requested]
-    for code in ('EHZ', 'SHZ', 'HHZ', 'BHZ', 'ENZ'):
+    for code in ('EHZ', 'SHZ', 'HHZ', 'BHZ', 'HNZ', 'ENZ'):
         if code in chans:
             return code, chans[code]
     raise ValueError(f'{network}.{station} has no vertical channel; channels: {sorted(chans)}')
@@ -157,19 +157,29 @@ def preprocess(tr, freqmin=BANDPASS[0], freqmax=BANDPASS[1], edge_sec=EDGE_SEC):
     tr.detrend('linear')
     tr.detrend('demean')
     tr.taper(max_percentage=None, max_length=edge_sec)
-    if tr.stats.sampling_rate != SAMPLING_RATE:
-        tr.resample(SAMPLING_RATE)
+    _to_target_rate(tr)
     tr.filter('bandpass', freqmin=freqmin, freqmax=freqmax, corners=4)
     return tr
 
 
+def _to_target_rate(tr):
+    """Resample in place to SAMPLING_RATE, low-passing first when downsampling (obspy's resample does not)."""
+    if tr.stats.sampling_rate > SAMPLING_RATE:
+        tr.filter('lowpass', freq=0.4 * SAMPLING_RATE, corners=4, zerophase=True)
+    if tr.stats.sampling_rate != SAMPLING_RATE:
+        tr.resample(SAMPLING_RATE)
+
+
 def detrend_resample(tr):
-    """Detrend, demean and resample only (for feature computation on unfiltered data); returns a copy."""
+    """
+    Detrend, demean and bring to SAMPLING_RATE without the training bandpass
+    (feature computation on the full band); when downsampling this includes the
+    anti-alias low-pass of ``_to_target_rate``. Returns a copy.
+    """
     tr = tr.copy()
     tr.data = tr.data.astype(np.float64)
     tr.detrend('linear').detrend('demean')
-    if tr.stats.sampling_rate != SAMPLING_RATE:
-        tr.resample(SAMPLING_RATE)
+    _to_target_rate(tr)
     return tr
 
 
@@ -215,23 +225,100 @@ def overlaps_event(w_t0, w_t1, quakes, coda_sec=120.0):
     return any(q_t <= w_t1 and q_t + coda_sec >= w_t0 for q_t, _, _ in quakes)
 
 
-def relabel_bursts(meta, positive_label, factor=20.0, noise_label=0):
+def relabel_bursts(meta, positive_label, factor=20.0, noise_label=0, peak_col='peak_band', rms_col='rms_band'):
     """
-    Night windows whose raw ``peak`` is at least ``factor`` times the station's
-    median night ``rms`` are single vehicle passes: relabel them to
-    ``positive_label`` and tag ``label_method`` with ``+burst>=<factor>x``.
+    Night windows whose 5-30 Hz ``peak_band`` is at least ``factor`` times the
+    station's median night ``rms_band`` are single vehicle passes: relabel them
+    to ``positive_label`` and tag ``label_method`` with ``+burst>=<factor>x``.
     Adds ``night_rms_ref`` and ``burst_ratio`` columns. Returns the count per station.
+    Falls back to the raw ``peak`` / ``rms`` columns when the band columns are absent.
     """
+    if peak_col not in meta or rms_col not in meta:
+        peak_col, rms_col = 'peak', 'rms'
     night = meta['label'] == noise_label
-    ref = meta[night].groupby('station')['rms'].median()
+    ref = meta[night].groupby('station')[rms_col].median()
     meta['night_rms_ref'] = meta['station'].map(ref)
-    meta['burst_ratio'] = meta['peak'] / meta['night_rms_ref']
+    meta['burst_ratio'] = meta[peak_col] / meta['night_rms_ref']
     burst = night & (meta['burst_ratio'] >= factor)
     meta.loc[burst, 'label'] = positive_label
     meta.loc[burst, 'label_name'] = LABEL_MAP[positive_label]
     meta.loc[burst, 'window_type'] = LABEL_MAP[positive_label].lower()
     meta.loc[burst, 'label_method'] = meta.loc[burst, 'label_method'] + f'+burst>={factor:g}x'
     return burst.groupby(meta['station']).sum().astype(int).to_dict()
+
+
+def label_event_detections(meta, events, positive_label, search_sec=900.0, factor=3.0, noise_label=0,
+                           max_windows=6, rms_col='rms_band'):
+    """
+    Scheduled events with uncertain timing (a train passing a station, a
+    take-off roll): within +/- ``search_sec`` of each event time, the windows
+    whose rms reaches ``factor`` times the median rms of the search span are
+    the event. Every contiguous run of such windows (each at most
+    ``max_windows`` long: a train meeting another at a siding gives two runs)
+    gets ``positive_label``; other windows in the span are ambiguous and are
+    marked ``drop``; windows outside every span keep ``noise_label``. Windows an
+    earlier event already labeled positive are left out of a later overlapping
+    span's candidates, so dense schedules (aircraft) neither drop nor re-claim them.
+
+    ``meta`` needs ``start_time`` (UTC strings), ``rms_band`` (or ``rms``) and ``station``;
+    ``events`` is a DataFrame with ``t0`` (UTCDateTime) and ``event_id``.
+    Returns ``meta`` with ``label`` / ``label_name`` / ``window_type`` /
+    ``label_method`` / ``event_id`` / ``drop`` columns updated, and a
+    per-event report DataFrame with columns station, event_id, detected,
+    peak_ratio (max rms / span median), n_windows (labeled) and n_runs
+    (contiguous runs above threshold); undetected events carry 0 / 0.
+    """
+    orig_index = meta.index
+    meta = meta.reset_index(drop=True)  # work in positions; restore the caller's index at the end
+    if rms_col not in meta:
+        rms_col = 'rms'
+    t = np.array([float(UTCDateTime(x)) for x in meta['start_time']])
+    if 'drop' not in meta:
+        meta['drop'] = False
+    if 'event_id' not in meta:
+        meta['event_id'] = None
+    report = []
+    columns = ['station', 'event_id', 'detected', 'peak_ratio', 'n_windows', 'n_runs']
+    events = events.sort_values('t0', kind='stable')  # "earlier event" means earlier in time, not in the CSV
+    for station, idx in meta.groupby('station').groups.items():
+        idx = np.asarray(list(idx))
+        for ev in events.itertuples():
+            t_ev = float(ev.t0)
+            span = idx[(t[idx] >= t_ev - search_sec) & (t[idx] + WINDOW_SEC <= t_ev + search_sec + WINDOW_SEC)]
+            if len(span) < 3:
+                report.append({'station': station, 'event_id': ev.event_id, 'detected': False, 'peak_ratio': np.nan,
+                               'n_windows': 0, 'n_runs': 0})
+                continue
+            # windows an earlier, overlapping event already claimed stay with it
+            span = span[meta.loc[span, 'label'].to_numpy() != positive_label]
+            if len(span) < 3:
+                report.append({'station': station, 'event_id': ev.event_id, 'detected': False, 'peak_ratio': np.nan,
+                               'n_windows': 0, 'n_runs': 0})
+                continue
+            rms = meta.loc[span, rms_col].to_numpy()
+            ref = float(np.median(rms))
+            ratio = rms / ref if ref > 0 else np.zeros_like(rms)
+            k = int(np.argmax(ratio))
+            if ratio[k] < factor:
+                meta.loc[span, 'drop'] = True  # scheduled but not seen: ambiguous, keep out of Noise
+                report.append({'station': station, 'event_id': ev.event_id, 'detected': False,
+                               'peak_ratio': float(ratio[k]), 'n_windows': 0, 'n_runs': 0})
+                continue
+            above = ratio >= factor
+            edges = np.diff(np.r_[0, above.astype(int), 0])
+            runs = list(zip(np.flatnonzero(edges == 1), np.flatnonzero(edges == -1)))
+            hit = np.concatenate([span[a:min(b, a + max_windows)] for a, b in runs])
+            meta.loc[span, 'drop'] = True
+            meta.loc[hit, 'drop'] = False
+            meta.loc[hit, 'label'] = positive_label
+            meta.loc[hit, 'label_name'] = LABEL_MAP[positive_label]
+            meta.loc[hit, 'window_type'] = LABEL_MAP[positive_label].lower()
+            meta.loc[hit, 'label_method'] = f'events:search{search_sec:g}s,rms>={factor:g}x'
+            meta.loc[hit, 'event_id'] = str(ev.event_id)
+            report.append({'station': station, 'event_id': ev.event_id, 'detected': True,
+                           'peak_ratio': float(ratio[k]), 'n_windows': int(len(hit)), 'n_runs': len(runs)})
+    meta.index = orig_index
+    return meta, pd.DataFrame(report, columns=columns)
 
 
 # ----------------------------------------------------------------------------

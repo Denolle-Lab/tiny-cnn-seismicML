@@ -1,0 +1,9 @@
+station,event_id,detected,peak_ratio,n_windows,n_runs
+K222,coastal_classic_out_2026-09-09,True,21.34503215717615,1,1
+K222,glacier_discovery_out_2026-09-09,True,13.25694924682895,4,2
+K222,glacier_discovery_back_2026-09-09,True,12.15159172965685,1,1
+K222,coastal_classic_back_2026-09-09,True,27.372399541352355,1,1
+K222,coastal_classic_out_2026-09-12,True,30.035645464643498,2,1
+K222,glacier_discovery_out_2026-09-12,True,12.813876725736955,2,1
+K222,glacier_discovery_back_2026-09-12,True,17.438446532911026,1,1
+K222,coastal_classic_back_2026-09-12,True,29.337545495603923,1,1

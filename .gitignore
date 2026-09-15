@@ -66,3 +66,7 @@ examples/predictions/
 .DS_Store
 Thumbs.db
 
+
+# Small hand-made reference tables are committed even though data CSVs are not
+!configs/events/*.csv
+!docs/*.csv

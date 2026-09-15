@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Window Label Review</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@87.5,500;87.5,700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root { --paper:#F4F6F4; --ink:#1B2229; --muted:#5A6670; --rule:#D3DAD6; --panel:#EBEFEC; --card:#FFFFFF;
+          --noise:#2b6ca3; --traffic:#d9822b; --train:#7b3f9e; --ok:#2e7d4f; --no:#A32D2D; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --paper:#141A1E; --ink:#E6EAE7; --muted:#97A3A9; --rule:#2C353B; --panel:#1C2429; --card:#1A2126;
+          --noise:#6fa8dc; --traffic:#e9a15c; --train:#b48ad6; --ok:#5fbf85; --no:#E06B6B; }
+  }
+  :root[data-theme="dark"] { --paper:#141A1E; --ink:#E6EAE7; --muted:#97A3A9; --rule:#2C353B; --panel:#1C2429; --card:#1A2126;
+          --noise:#6fa8dc; --traffic:#e9a15c; --train:#b48ad6; --ok:#5fbf85; --no:#E06B6B; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif; font-size:14.5px; line-height:1.45; padding-block:24px 60px; padding-inline:18px; }
+  main { max-width:1180px; margin:0 auto; }
+  h1 { font-family:"Archivo","Helvetica Neue",Arial,sans-serif; font-stretch:87.5%; font-size:28px; margin:4px 0 4px; }
+  .eyebrow, .k { font-family:"IBM Plex Mono",Menlo,monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .lede { color:var(--muted); max-width:78ch; margin:0 0 14px; }
+  .bar { position:sticky; top:0; z-index:5; background:var(--paper); border-bottom:1px solid var(--rule); padding:10px 0 10px; margin-bottom:16px; display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; }
+  .bar label { font-size:13px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+  select, input[type=text] { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--rule); border-radius:3px; background:var(--card); color:var(--ink); }
+  button { font:inherit; font-size:13px; padding:6px 12px; border:1px solid var(--rule); border-radius:3px; background:var(--card); color:var(--ink); cursor:pointer; }
+  button:hover { border-color:var(--ink); }
+  button:focus-visible, .seg button:focus-visible, input:focus-visible, select:focus-visible { outline:2px solid var(--train); outline-offset:2px; }
+  button.primary { background:var(--ink); color:var(--paper); border-color:var(--ink); }
+  .stat { font-family:"IBM Plex Mono",Menlo,monospace; font-size:12.5px; color:var(--muted); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(360px, 1fr)); gap:14px; }
+  .card { background:var(--card); border:1px solid var(--rule); border-radius:4px; overflow:hidden; display:flex; flex-direction:column; }
+  .card img { width:100%; height:auto; display:block; background:#fff; }
+  .meta { padding:8px 10px 6px; display:flex; flex-wrap:wrap; gap:4px 10px; font-size:12.5px; align-items:baseline; }
+  .tag { font-family:"IBM Plex Mono",Menlo,monospace; font-size:11px; padding:1px 6px; border-radius:3px; color:#fff; }
+  .tag.Noise { background:var(--noise); } .tag.Traffic { background:var(--traffic); } .tag.Train { background:var(--train); } .tag.Aircraft { background:#3a8f5a; }
+  .meta .mono { font-family:"IBM Plex Mono",Menlo,monospace; font-size:11.5px; color:var(--muted); }
+  .decide { padding:0 10px 10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .seg { display:inline-flex; border:1px solid var(--rule); border-radius:3px; overflow:hidden; }
+  .seg button { border:0; border-radius:0; padding:5px 12px; background:transparent; }
+  .seg button + button { border-left:1px solid var(--rule); }
+  .seg button.on.agree { background:var(--ok); color:#fff; }
+  .seg button.on.disagree { background:var(--no); color:#fff; }
+  .decide input[type=text] { flex:1 1 140px; min-width:120px; }
+  .card.disagree { border-color:var(--no); }
+  footer { margin-top:36px; padding-top:14px; border-top:1px solid var(--rule); font-size:12.5px; color:var(--muted); max-width:90ch; }
+  a { color:var(--train); }
+  @media (max-width: 480px) { .grid { grid-template-columns:1fr; } }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">tiny-cnn-seismicML · label review</div>
+  <h1>Do you agree with these labels?</h1>
+  <p class="lede">Each card is one stored 60 s window (2 to 20 Hz; 2 to 45 Hz for the aircraft stations; waveform and spectrogram) with the label a rule gave it. Every window starts as <strong>Agree</strong>; click <strong>Disagree</strong> on the ones that look wrong, add a note if you like, then download the CSV. Decisions are kept in this browser until you reset. Look for: Noise quiet with at most small transients; Traffic sustained 5 to 20 Hz energy (day) or one to two 3 to 6 s vehicle passes (night burst); Train a 20 to 40 s spindle with an emergent onset; Aircraft a 30 to 90 s broadband burst concentrated above 15 Hz, seen at both Turnagain stations. The <a href="../label_verification_2026-09-14.html">verification report</a> explains each rule.</p>
+
+  <div class="bar">
+    <label>Reviewer <input type="text" id="reviewer" placeholder="your name" size="14"></label>
+    <label>Class <select id="f-class"><option value="">all</option><option>Noise</option><option>Traffic</option><option>Train</option><option>Aircraft</option></select></label>
+    <label>Rule <select id="f-rule"><option value="">all</option><option>time of day</option><option>night burst</option><option>timetable search</option><option>band rule</option></select></label>
+    <label>Station <select id="f-station"><option value="">all</option><option>R1796</option><option>R3130</option><option>K222</option><option>RFD97</option><option>R9286</option></select></label>
+    <label>Show <select id="f-show"><option value="">all</option><option value="disagree">disagreed only</option></select></label>
+    <span class="stat" id="stat"></span>
+    <button class="primary" id="download">Download CSV</button>
+    <button id="reset">Reset decisions</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <footer>
+    <p>Windows shown as plots only; waveform files are not published. Raspberry Shake data: "Data powered by Raspberry Shake, S.A., a citizen-science project. Please visit <a href="https://raspberryshake.org">raspberryshake.org</a> and join the Citizen Science Community today! DOI: <a href="https://doi.org/10.7914/SN/AM">10.7914/SN/AM</a>." AK data: Alaska Earthquake Center via IRIS, DOI <a href="https://doi.org/10.7914/SN/AK">10.7914/SN/AK</a>.</p>
+    <p>CSV columns: reviewer, reviewed_at, id, prefix, source_stamp, window_id, network, station, start_time_utc, local_time, label, label_name, rule, label_method, event_id, decision, note, rms, rms_band, band_ratio. Merge it into the metadata files with <code>python scripts/apply_review.py review.csv</code>.</p>
+  </footer>
+</main>
+
+<script src="windows.js"></script>
+<script>
+(function () {
+  const W = window.REVIEW_WINDOWS || [];
+  const KEY = 'tinycnn-review-v1';
+  let state = {};
+  try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { state = {}; }
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+  const $ = (id) => document.getElementById(id);
+  const grid = $('grid');
+  const filters = ['f-class', 'f-rule', 'f-station', 'f-show'].map($);
+  try { $('reviewer').value = localStorage.getItem(KEY + '-reviewer') || ''; } catch (e) {}
+  $('reviewer').addEventListener('input', () => { try { localStorage.setItem(KEY + '-reviewer', $('reviewer').value); } catch (e) {} });
+
+  function decision(id) { return (state[id] && state[id].d) || 'agree'; }
+  function note(id) { return (state[id] && state[id].n) || ''; }
+
+  function card(w) {
+    const el = document.createElement('div');
+    el.className = 'card' + (decision(w.id) === 'disagree' ? ' disagree' : '');
+    el.dataset.id = w.id;
+    const extra = w.event_id ? ` · ${w.event_id}` : '';
+    el.innerHTML = `
+      <img src="${w.img}" loading="lazy" alt="${w.label_name} window at ${w.station}, ${w.local_time}">
+      <div class="meta">
+        <span class="tag ${w.label_name}">${w.label_name}</span>
+        <span>${w.rule}</span>
+        <span class="mono">${w.network}.${w.station} · ${w.local_time} local${extra}</span>
+        <span class="mono">rms ${w.rms} · band ${w.band_ratio} · kurt ${w.kurtosis_band}</span>
+      </div>
+      <div class="decide">
+        <div class="seg" role="group" aria-label="decision">
+          <button class="agree" type="button">Agree</button>
+          <button class="disagree" type="button">Disagree</button>
+        </div>
+        <input type="text" placeholder="note (optional)" value="${note(w.id).replace(/"/g, '&quot;')}" aria-label="note">
+      </div>`;
+    const [bA, bD] = el.querySelectorAll('.seg button');
+    const paint = () => {
+      const d = decision(w.id);
+      bA.classList.toggle('on', d === 'agree'); bD.classList.toggle('on', d === 'disagree');
+      bA.setAttribute('aria-pressed', d === 'agree'); bD.setAttribute('aria-pressed', d === 'disagree');
+      el.classList.toggle('disagree', d === 'disagree');
+    };
+    bA.onclick = () => { state[w.id] = { ...(state[w.id] || {}), d: 'agree' }; save(); paint(); stat(); };
+    bD.onclick = () => { state[w.id] = { ...(state[w.id] || {}), d: 'disagree' }; save(); paint(); stat(); };
+    el.querySelector('input').addEventListener('input', (e) => { state[w.id] = { ...(state[w.id] || {}), n: e.target.value }; save(); });
+    paint();
+    return el;
+  }
+
+  function visible() {
+    const [c, r, s, show] = filters.map((f) => f.value);
+    return W.filter((w) => (!c || w.label_name === c) && (!r || w.rule === r) && (!s || w.station === s)
+      && (!show || decision(w.id) === 'disagree'));
+  }
+
+  function render() {
+    grid.replaceChildren(...visible().map(card));
+    stat();
+  }
+
+  function stat() {
+    const dis = W.filter((w) => decision(w.id) === 'disagree').length;
+    const noted = W.filter((w) => note(w.id)).length;
+    $('stat').textContent = `${visible().length} shown · ${W.length} windows · ${dis} disagreed · ${noted} notes`;
+  }
+
+  filters.forEach((f) => f.addEventListener('change', render));
+
+  $('download').onclick = () => {
+    const reviewer = $('reviewer').value.trim() || 'anonymous';
+    const when = new Date().toISOString();
+    const cols = ['reviewer', 'reviewed_at', 'id', 'prefix', 'source_stamp', 'window_id', 'network', 'station', 'start_time_utc',
+      'local_time', 'label', 'label_name', 'rule', 'label_method', 'event_id', 'decision', 'note', 'rms', 'rms_band', 'band_ratio'];
+    const esc = (v) => { const s = v == null ? '' : String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    const lines = [cols.join(',')];
+    for (const w of W) {
+      const row = { ...w, reviewer, reviewed_at: when, decision: decision(w.id), note: note(w.id) };
+      lines.push(cols.map((c) => esc(row[c])).join(','));
+    }
+    const blob = new Blob([lines.join('\n') + '\n'], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `label_review_${reviewer.replace(/\W+/g, '_')}_${when.slice(0, 10)}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+
+  $('reset').onclick = () => {
+    if (!confirm('Clear every decision and note in this browser?')) return;
+    state = {}; save(); render();
+  };
+
+  render();
+})();
+</script>
+</body>
+</html>

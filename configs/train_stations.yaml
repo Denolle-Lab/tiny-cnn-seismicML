@@ -1,0 +1,57 @@
+# Train class (issue #10): stations along the Alaska Railroad and the
+# scheduled passages to search around. Pull with
+#   python scripts/collect_continuous_windows.py --config configs/train_stations.yaml
+#
+# Tested 2026-09-09 (commit on PR "train-aircraft-events"):
+#   AK.K222  Chapel by the Sea, Potter: 100 m from the Seward line. All four
+#            southbound passages detected at 12-27x the surrounding 5-30 Hz
+#            level, 20-40 s spindles; timetable offsets right to 2-6 min.
+#   AK.K223  Government Hill, 830 m from the mainline / 640 m from the yard:
+#            Denali Star not seen (peak 1.2x).
+#   AK.MS01  Wasilla, 210 m from the line: not seen (1.1x); offset or siding?
+#   AK.K208, K217, AM.R8F48, S909E, R6C15, R4E98: no data this summer.
+#   AM.R1796 Romig, 940 m: trains hidden in daytime traffic, one evening
+#            arrival detected at 3.2x.
+# AK strong-motion sensors (HN*, 200 Hz) only see trains at ~100 m; the
+# collector low-passes at 40 Hz before resampling to 100 Hz.
+#
+# Season timetable: configs/events/arr_summer_2026.csv from
+# scripts/make_train_events.py (configs/arr_schedule.yaml). Freight is not
+# scheduled; the search step only labels what it sees near a scheduled time.
+
+stations:
+  - code: K222
+    network: AK
+    role: primary
+    site: Chapel by the Sea, Old Seward Hwy at Potter Marsh
+    distance_to_track_km: 0.10
+    sensors: HNZ accelerometer, 200 Hz
+  - code: K223
+    network: AK
+    role: contrast
+    site: Government Hill Elementary, above the Anchorage rail yard
+    distance_to_track_km: 0.83
+  - code: RFD97
+    network: AM
+    role: contrast
+    site: Turnagain Elementary, 720 m from the line
+    distance_to_track_km: 0.72
+
+collection:
+  network: AK
+  roles: [primary]
+  class_name: Train
+  label_from: events
+  events: configs/events/arr_summer_2026.csv
+  event_search_sec: 900
+  event_detect_factor: 3
+  exclude_events: true
+  noise_keep: 0.05          # ~70 Noise windows per station-day; positives all kept
+  review_sheet: 24
+  tz: America/Anchorage
+  days:
+    - 2026-09-09            # test days
+    - 2026-09-12
+    # the whole passenger season, one run per day (~2 min each at IRIS):
+    # - {start: 2026-05-15, end: 2026-09-13}
+  prefix_pattern: "AK_train_{date}"
