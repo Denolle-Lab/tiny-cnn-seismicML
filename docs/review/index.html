@@ -115,6 +115,7 @@
     const paint = () => {
       const d = decision(w.id);
       bA.classList.toggle('on', d === 'agree'); bD.classList.toggle('on', d === 'disagree');
+      bA.setAttribute('aria-pressed', d === 'agree'); bD.setAttribute('aria-pressed', d === 'disagree');
       el.classList.toggle('disagree', d === 'disagree');
     };
     bA.onclick = () => { state[w.id] = { ...(state[w.id] || {}), d: 'agree' }; save(); paint(); stat(); };

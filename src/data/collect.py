@@ -264,7 +264,9 @@ def label_event_detections(meta, events, positive_label, search_sec=900.0, facto
     ``events`` is a DataFrame with ``t0`` (UTCDateTime) and ``event_id``.
     Returns ``meta`` with ``label`` / ``label_name`` / ``window_type`` /
     ``label_method`` / ``event_id`` / ``drop`` columns updated, and a
-    per-event report DataFrame (station, event_id, detected, peak_ratio).
+    per-event report DataFrame with columns station, event_id, detected,
+    peak_ratio (max rms / span median), n_windows (labeled) and n_runs
+    (contiguous runs above threshold); undetected events carry 0 / 0.
     """
     orig_index = meta.index
     meta = meta.reset_index(drop=True)  # work in positions; restore the caller's index at the end
@@ -276,6 +278,7 @@ def label_event_detections(meta, events, positive_label, search_sec=900.0, facto
     if 'event_id' not in meta:
         meta['event_id'] = None
     report = []
+    columns = ['station', 'event_id', 'detected', 'peak_ratio', 'n_windows', 'n_runs']
     for station, idx in meta.groupby('station').groups.items():
         idx = np.asarray(list(idx))
         for ev in events.itertuples():
@@ -283,13 +286,13 @@ def label_event_detections(meta, events, positive_label, search_sec=900.0, facto
             span = idx[(t[idx] >= t_ev - search_sec) & (t[idx] + WINDOW_SEC <= t_ev + search_sec + WINDOW_SEC)]
             if len(span) < 3:
                 report.append({'station': station, 'event_id': ev.event_id, 'detected': False, 'peak_ratio': np.nan,
-                               'n_windows': 0})
+                               'n_windows': 0, 'n_runs': 0})
                 continue
             # windows an earlier, overlapping event already claimed stay with it
             span = span[meta.loc[span, 'label'].to_numpy() != positive_label]
             if len(span) < 3:
                 report.append({'station': station, 'event_id': ev.event_id, 'detected': False, 'peak_ratio': np.nan,
-                               'n_windows': 0})
+                               'n_windows': 0, 'n_runs': 0})
                 continue
             rms = meta.loc[span, rms_col].to_numpy()
             ref = float(np.median(rms))
@@ -314,7 +317,7 @@ def label_event_detections(meta, events, positive_label, search_sec=900.0, facto
             report.append({'station': station, 'event_id': ev.event_id, 'detected': True,
                            'peak_ratio': float(ratio[k]), 'n_windows': int(len(hit)), 'n_runs': len(runs)})
     meta.index = orig_index
-    return meta, pd.DataFrame(report)
+    return meta, pd.DataFrame(report, columns=columns)
 
 
 # ----------------------------------------------------------------------------

@@ -26,7 +26,7 @@ def main():
     p.add_argument('--dry-run', action='store_true')
     args = p.parse_args()
     rev = pd.read_csv(args.csv)
-    need = {'prefix', 'source_stamp', 'window_id', 'decision', 'reviewer'}
+    need = {'prefix', 'source_stamp', 'window_id', 'decision', 'reviewer', 'label_name'}
     if not need <= set(rev.columns):
         raise SystemExit(f'{args.csv} is missing columns {sorted(need - set(rev.columns))}')
     for (prefix, stamp), g in rev.groupby(['prefix', 'source_stamp']):

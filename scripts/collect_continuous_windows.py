@@ -389,7 +389,11 @@ def collect(args):
         offsets = parse_offsets(args.event_offsets)
         parts, reports = [], []
         for station, sub in meta.groupby('station', sort=False):
-            ev = events[events['station'] == station].copy() if 'station' in events.columns else events.copy()
+            if 'station' in events.columns:  # rows with a blank station apply to every station
+                st = events['station'].fillna('').astype(str).str.strip()
+                ev = events[(st == station) | (st == '')].copy()
+            else:
+                ev = events.copy()
             ev['t0'] = ev['t0'] + 60.0 * offsets.get(station, 0.0)
             ev = ev[(ev['t0'] >= t0 - args.event_search_sec) & (ev['t0'] <= t1 + args.event_search_sec)]
             labeled, rep = label_event_detections(sub, ev, positive_label, args.event_search_sec,

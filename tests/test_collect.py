@@ -176,3 +176,16 @@ def test_label_event_detections_labels_every_run_above_threshold():
     assert out.loc[[12, 13, 22], 'label'].tolist() == [4, 4, 4]
     assert rep.iloc[0]['n_runs'] == 2 and rep.iloc[0]['n_windows'] == 3
     assert out.loc[[5, 17, 30], 'drop'].all()
+
+
+def test_label_event_detections_report_has_a_fixed_schema_even_with_no_events():
+    base = UTCDateTime('2026-09-09T14:00:00')
+    meta = pd.DataFrame({'station': ['S'] * 5, 'start_time': [str(base + 60 * i) for i in range(5)],
+                         'label': [0] * 5, 'label_name': ['Noise'] * 5, 'window_type': ['noise'] * 5,
+                         'label_method': ['events'] * 5, 'rms_band': [10.0] * 5})
+    _, rep = collect.label_event_detections(meta, pd.DataFrame({'event_id': [], 't0': []}), positive_label=4)
+    assert list(rep.columns) == ['station', 'event_id', 'detected', 'peak_ratio', 'n_windows', 'n_runs']
+    # a span too short to evaluate still reports every column
+    _, rep = collect.label_event_detections(meta, pd.DataFrame({'event_id': ['e'], 't0': [base + 3600]}), positive_label=4,
+                                            search_sec=60)
+    assert rep.iloc[0]['n_runs'] == 0 and rep.iloc[0]['n_windows'] == 0
