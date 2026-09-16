@@ -111,6 +111,18 @@ Output: `<NET>_<class>_waveforms_<stamp>.npy` (N, 6000), `_labels_` (global labe
 
 Train class (#10): `configs/train_stations.yaml` drives the same collector in `events` mode with the Alaska Railroad timetable (`configs/arr_schedule.yaml` → `scripts/make_train_events.py` → `configs/events/arr_summer_2026.csv`); the collector searches ±15 min around each scheduled passage and keeps the windows whose 5 to 30 Hz rms stands out. AK.K222 (100 m from the Seward line) sees every passage; the AK strong-motion sensors are otherwise too insensitive, and only geophones will do for aircraft (#11), which also needs ADS-B times from an OpenSky account (`scripts/fetch_flights_opensky.py`). Station distances to the track and runways: `docs/station_rail_runway_distances.csv`.
 
+**Regenerating the training sets on another machine.** The waveform files are never committed, but everything needed to rebuild them is: the three configs, the collector, and `datasets/metadata/` with one metadata CSV per station-day (start times, labels, label method, per-window features) plus a `manifest.csv` of what each set holds. From a fresh clone:
+
+```bash
+pip install -r requirements.txt
+python scripts/collect_continuous_windows.py --config configs/am_stations.yaml        # traffic week, 8 stations
+python scripts/collect_continuous_windows.py --config configs/train_stations.yaml     # K222, the passenger season
+python scripts/collect_continuous_windows.py --config configs/aircraft_stations.yaml  # Turnagain, four weeks
+python scripts/export_metadata.py --check    # every set should print "identical" against datasets/metadata/
+```
+
+The check compares start times and labels window by window; the archives return the same samples, so a pull on another machine reproduces the committed manifest exactly (verified on a clean venv for the Romig sets). `python scripts/export_metadata.py --dirs <dirs>` refreshes `datasets/metadata/` after new pulls.
+
 Stations for the traffic class are listed in `configs/am_stations.yaml`: R1796 and R3130 at Romig Middle School (the partner school) and R4017 for contrast, matched to schools in `docs/am_station_school_matches.csv`. The config also fixes the collection days and label settings, so the whole AM pull is one command that regenerates the same station-days on any machine (file stamps differ; the notebook always picks the newest set per prefix):
 
 ```bash
