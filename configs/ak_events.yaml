@@ -51,6 +51,18 @@ collection:
   # Manual review: drop the 98 windows rejected by eye in the July 2026 run
   # (docs/ak_dropped_windows.csv, all pre-event noise). With drop_manual true
   # the pull reproduces the set behind models/compact-v2; false keeps everything.
-  drop_manual: true
+  drop_manual: true # this was investigated in July 2026 and the 98 windows were dropped from the training set due to having earthquakes appear in noise windows, we could also utilize libcomc
   drop_list: docs/ak_dropped_windows.csv   # relative to the repo root
+  # Pick exclusion (optional, off): drop a noise window when another USGS event
+  # (M >= event_minmag within event_radius_deg of the station, origin up to
+  # pick_lead_sec before the checked span) has a ComCat pick at that station in
+  # the span. Measured 2026-09-16 against the 98 manual drops: in-window at M2
+  # reaches 5 of 98 (drops 4 the review kept); 240 s before the earthquake window
+  # at M1 reaches 16 (drops 38 the review kept). So it supplements the manual
+  # list, it does not replace it. Enable with exclude_picks: true.
+  exclude_picks: false
+  event_minmag: 2.0
+  event_radius_deg: 2.0
+  pick_lead_sec: 300
+  pick_span_sec: null        # span checked for picks, ending at the earthquake window start; null = the noise window (60 s)
   request_delay_sec: 0.2     # pause between IRIS requests

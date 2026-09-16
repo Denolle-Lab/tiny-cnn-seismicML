@@ -1,0 +1,38 @@
+Seismic CNN Training Summary - STANDARD Model
+============================================================
+
+Date: 2026-09-16 14:29:42
+
+Model Configuration:
+  Type: standard
+  Parameters: 93,699
+  Input shape: (batch, 1, 6000)
+  Number of classes: 3
+
+Training Configuration:
+  Epochs: 60
+  Batch size: 32
+  Learning rates: {'compact': 0.0005, 'standard': 0.0004}
+  Weight decay: 0.001
+
+Dataset Split:
+  Train: 5389 samples
+  Validation: 674 samples
+  Test: 674 samples
+
+Results:
+  Best validation loss: 0.0771
+  Final train accuracy: 97.31%
+  Final val accuracy: 91.99%
+  Test accuracy: 94.81%
+
+Classification Report:
+              precision    recall  f1-score   support
+
+       Noise      0.844     0.989     0.910       180
+     Traffic      1.000     0.889     0.941       289
+  Earthquake      0.990     0.995     0.993       205
+
+    accuracy                          0.948       674
+   macro avg      0.945     0.958     0.948       674
+weighted avg      0.955     0.948     0.949       674

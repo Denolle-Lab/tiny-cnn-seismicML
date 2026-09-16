@@ -79,6 +79,15 @@ DEFAULTS = {
     'zscore': False,          # filtered counts on disk like the AM sets; True = per-window z-score, the July 2026 format
     'drop_manual': False,     # drop the windows rejected by eye in the July 2026 review
     'drop_list': 'docs/ak_dropped_windows.csv',  # (event_id, station, window_type) rows; relative to the repo root
+    # Pick exclusion: a noise window is dropped when the ComCat phase data of another
+    # catalogued event (M >= event_minmag within event_radius_deg of the station, origin
+    # up to pick_lead_sec before the window) has a pick at that station inside the window.
+    'exclude_picks': False,
+    'event_minmag': 2.0,
+    'event_radius_deg': 2.0,
+    'pick_lead_sec': 300.0,
+    'pick_span_sec': None,    # checked span ends at the earthquake window start and reaches back this far;
+                              # None = the noise window itself (noise_pre_sec - noise_end_sec)
     'request_delay_sec': 0.2,
     'fdsn': None,
     'out': str(REPO_ROOT / 'notebooks' / '02_labeling' / 'labeled_data'),
@@ -119,6 +128,18 @@ def parse_args():
                    help='Drop the windows listed in --drop-list (the July 2026 eye review)')
     g.add_argument('--no-drop-manual', dest='drop_manual', action='store_false', help='Keep every window')
     p.add_argument('--drop-list', help='CSV with event_id, station, window_type columns (default docs/ak_dropped_windows.csv)')
+    g = p.add_mutually_exclusive_group()
+    g.add_argument('--exclude-picks', dest='exclude_picks', action='store_true',
+                   help='Drop noise windows containing a ComCat pick of another catalogued event at that station')
+    g.add_argument('--no-exclude-picks', dest='exclude_picks', action='store_false')
+    p.add_argument('--event-minmag', type=float, help='exclude-picks: candidate events M >= this (default 2.0)')
+    p.add_argument('--event-radius-deg', type=float,
+                   help='exclude-picks: candidate events within this distance of the station (default 2.0)')
+    p.add_argument('--pick-lead-sec', type=float,
+                   help='exclude-picks: candidate origins up to this many seconds before the checked span (default 300)')
+    p.add_argument('--pick-span-sec', type=float,
+                   help='exclude-picks: span checked for picks, ending at the earthquake window start '
+                        '(default: the noise window itself, 60 s; e.g. 240)')
     p.add_argument('--request-delay-sec', type=float)
     p.add_argument('--fdsn', help='Waveform FDSN base URL or name; default by network')
     p.add_argument('--out', help='Output directory')
@@ -250,21 +271,31 @@ def find_stations(cfg, iris):
     return stations
 
 
-_phase_cache = {}  # event_id -> {STATION: P pick UTCDateTime}; one ComCat download per event
+_phase_cache = {}  # event_id -> {'P': {STATION: P pick}, 'all': {STATION: [every pick]}}; one ComCat download per event
 
 
-def p_picks(event_id):
+def _phase_products(event_id):
+    """ComCat phase-data products for an event; [] when the event has none (no retry for that)."""
+    try:
+        return get_event_by_id(event_id).getProducts('phase-data')
+    except Exception as err:
+        if type(err).__name__ == 'ProductNotFoundError':
+            return []
+        raise
+
+
+def event_picks(event_id):
     """
-    Station code -> P pick time for one event from the ComCat phase-data
-    QuakeML, cached per event. Notebook logic: phase labels on the origin's
-    arrivals first (older AEC events), pick phase_hint as the fallback.
+    Picks of one event from the ComCat phase-data QuakeML, cached per event:
+    ``'P'`` maps station code -> P pick time (notebook logic: phase labels on
+    the origin's arrivals first, pick phase_hint as the fallback), ``'all'``
+    maps station code -> every pick time of any phase.
     """
     if event_id in _phase_cache:
         return _phase_cache[event_id]
-    picks = {}
+    picks, all_picks = {}, {}
     try:
-        products = with_retries(lambda: get_event_by_id(event_id).getProducts('phase-data'),
-                                f'{event_id} phase-data')
+        products = with_retries(lambda: _phase_products(event_id), f'{event_id} phase-data')
         if products:
             quakeml_bytes, _ = products[0].getContentBytes('quakeml.xml')
             cat = read_events(BytesIO(quakeml_bytes))
@@ -280,12 +311,24 @@ def p_picks(event_id):
                         if pick is not None:
                             picks.setdefault(pick.waveform_id.station_code.upper(), pick.time)
                 for pick in ev.picks:
+                    sta = pick.waveform_id.station_code.upper()
+                    all_picks.setdefault(sta, []).append(pick.time)
                     if (pick.phase_hint or '').upper().startswith('P'):
-                        picks.setdefault(pick.waveform_id.station_code.upper(), pick.time)
+                        picks.setdefault(sta, pick.time)
     except Exception as err:
         print(f'      [comcat ERROR] {event_id}: {type(err).__name__}: {str(err)[:120]}')
-    _phase_cache[event_id] = picks
-    return picks
+    _phase_cache[event_id] = {'P': picks, 'all': all_picks}
+    return _phase_cache[event_id]
+
+
+def p_picks(event_id):
+    """Station code -> P pick time for one event (see event_picks)."""
+    return event_picks(event_id)['P']
+
+
+def pick_in_window(event_id, station, w_t0, w_t1):
+    """True if any ComCat pick of ``event_id`` at ``station`` falls inside [w_t0, w_t1]."""
+    return any(w_t0 <= t <= w_t1 for t in event_picks(event_id)['all'].get(station.upper(), []))
 
 
 def p_arrival_sec(event_id, station, origin_time):
@@ -312,10 +355,17 @@ def main():
     if events.empty or stations.empty:
         raise SystemExit('No events or no stations; check region, magnitude and date range.')
 
-    windows, rows, stats = collect_windows(cfg, events, stations, iris)
+    windows, rows, stats = collect_windows(cfg, events, stations, iris, usgs)
     if not windows:
         raise SystemExit('No windows; check picks, station distance and the time range.')
 
+    auto_line = 'Pick exclusion: off (--exclude-picks drops noise windows containing a pick of another catalogued event)'
+    if cfg['exclude_picks']:
+        span = cfg['pick_span_sec'] or (cfg['noise_pre_sec'] - cfg['noise_end_sec'])
+        auto_line = (f'Pick exclusion: dropped {len(stats["auto_dropped"])} noise windows with a ComCat pick of '
+                     f'another M>={cfg["event_minmag"]:g} event within {cfg["event_radius_deg"]:g} deg in the '
+                     f'{span:g} s before the earthquake window (origin up to {cfg["pick_lead_sec"]:g} s earlier)')
+        print(f'\n{auto_line}')
     review_line = 'Manual review: none applied (--drop-manual to apply the July 2026 eye review)'
     if cfg['drop_manual']:
         windows, rows, n_dropped = drop_manual_windows(windows, rows, cfg['drop_list'])
@@ -330,6 +380,7 @@ def main():
     # write_dataset packs the ragged list (12000-sample earthquake, 6000-sample noise) into an object array
     paths = write_dataset(cfg['out'], cfg['prefix'], windows, y, meta, stamp=stamp, summary_lines=[
                      f'Command: {" ".join(sys.argv)}',
+                     auto_line,
                      review_line,
                      f'Catalog: USGS M{cfg["min_magnitude"]}-{cfg["max_magnitude"]} {cfg["start"]} -> {cfg["end"]}, '
                      f'{stats["events_attempted"]} events attempted, {meta["event_id"].nunique()} with windows',
@@ -338,7 +389,8 @@ def main():
                      f'bandpass {cfg["freqmin"]}-{cfg["freqmax"]} Hz, z-scored: {cfg["zscore"]}',
                      f'P arrivals: ComCat phase-data picks; skipped {stats["no_pick"]} station-events without a pick, '
                      f'{stats["no_data"]} without waveforms, {stats["errors"]} with download/processing errors',
-                 ])
+                 ] + (['', 'Noise windows dropped by pick exclusion (event_id, station, other event with the pick):']
+                      + [f'  {e} {s} {o}' for e, s, _, o in stats['auto_dropped']] if stats['auto_dropped'] else []))
     counts = meta.groupby(['station', 'label_name']).size().unstack(fill_value=0)
     print(f'\nSaved {len(y)} windows -> {paths["waveforms"].name}\n{counts.to_string()}')
     # The settings this run actually used, next to the data (the YAML may change later).
@@ -394,12 +446,50 @@ def station_traces(cfg, iris, st, p_time, rule_band):
     return tr, tr_raw, tr_band, cft
 
 
-def collect_windows(cfg, events, stations, iris, rule_band=(5.0, 30.0)):
+def station_catalog(cfg, usgs, st):
+    """
+    Every USGS event of M >= event_minmag within event_radius_deg of one station
+    over the whole collection range, as (origin, mag, dist_km, event_id) tuples:
+    the candidates whose picks may fall inside a noise window. Queried per
+    calendar year (USGS caps one response at 20000 events) and fails loudly:
+    a silent empty list would switch the exclusion off for the station.
+    """
+    from obspy.geodetics import gps2dist_azimuth
+    t0, t1 = UTCDateTime(cfg['start']), UTCDateTime(cfg['end'])
+    out = []
+    quarters = [(UTCDateTime(y, q, 1), UTCDateTime(y + (q == 10), 1 if q == 10 else q + 3, 1))
+                for y in range(t0.year, t1.year + 1) for q in (1, 4, 7, 10)]
+    for qa, qb in quarters:  # quarterly: M>=1 within 2 deg of Anchorage exceeds the 20000 cap per year
+        a, b = max(t0, qa), min(t1, qb)
+        if a >= b:
+            continue
+
+        def query(a=a, b=b):
+            try:
+                return usgs.get_events(starttime=a, endtime=b, latitude=st.latitude, longitude=st.longitude,
+                                       maxradius=cfg['event_radius_deg'], minmagnitude=cfg['event_minmag'])
+            except FDSNNoDataException:
+                return []
+        cat = with_retries(query, f'{st.station} catalog {a.date}')
+        for ev in cat:
+            o = ev.preferred_origin() or ev.origins[0]
+            m = ev.preferred_magnitude() or ev.magnitudes[0]
+            out.append((o.time, m.mag, gps2dist_azimuth(st.latitude, st.longitude, o.latitude, o.longitude)[0] / 1000,
+                        event_id_of(ev)))
+    print(f'  {st.station}: {len(out)} catalogued events M>={cfg["event_minmag"]:g} within '
+          f'{cfg["event_radius_deg"]:g} deg, {cfg["start"]} -> {cfg["end"]}')
+    return out
+
+
+def collect_windows(cfg, events, stations, iris, usgs=None, rule_band=(5.0, 30.0)):
     """
     Notebook main loop: for each event, the nearest stations with a ComCat P
     pick; download [P - noise_pre - 10, P + eq_post + 10], preprocess the
     notebook's way, cut one earthquake and one noise window per station.
-    Returns (windows, metadata rows, counters).
+    With cfg.exclude_picks, a noise window is dropped when another catalogued
+    event near the station (origin up to pick_lead_sec before the window) has
+    a ComCat pick at that station inside the window.
+    Returns (windows, metadata rows, counters); counters carry the dropped keys.
     """
     sr = SAMPLING_RATE
     eq_pre, eq_post = int(cfg['eq_pre_sec'] * sr), int(cfg['eq_post_sec'] * sr)
@@ -407,7 +497,12 @@ def collect_windows(cfg, events, stations, iris, rule_band=(5.0, 30.0)):
     eq_len, noise_len = eq_pre + eq_post, noise_pre - noise_end
     bandpass = f'{cfg["freqmin"]}-{cfg["freqmax"]}'
     windows, rows = [], []
-    stats = {'events_attempted': len(events), 'no_pick': 0, 'no_data': 0, 'errors': 0, 'station_events': 0}
+    stats = {'events_attempted': len(events), 'no_pick': 0, 'no_data': 0, 'errors': 0, 'station_events': 0,
+             'auto_dropped': []}
+    quakes = {}
+    if cfg['exclude_picks']:
+        print(f'Pick exclusion for noise windows (candidate origins up to {cfg["pick_lead_sec"]:g} s before a window):')
+        quakes = {st.station: station_catalog(cfg, usgs, st) for st in stations.itertuples()}
 
     for ev in tqdm(list(events.itertuples()), desc='Events', unit='event'):
         dist_km = [gps2dist_azimuth(ev.latitude, ev.longitude, s.latitude, s.longitude)[0] / 1000
@@ -450,6 +545,16 @@ def collect_windows(cfg, events, stations, iris, rule_band=(5.0, 30.0)):
                 w = data[s:e]
                 if len(w) != length or np.std(w) <= 1e-10:
                     continue
+                if kind == 'noise' and cfg['exclude_picks']:
+                    # Checked span ends where the earthquake window starts (= noise window end)
+                    c_t1 = trace_start + e / sr
+                    c_t0 = c_t1 - (cfg['pick_span_sec'] if cfg['pick_span_sec'] else length / sr)
+                    candidates = [q for q in quakes[st.station]
+                                  if q[3] != ev.event_id and c_t0 - cfg['pick_lead_sec'] <= q[0] <= c_t1]
+                    hit = next((q[3] for q in candidates if pick_in_window(q[3], st.station, c_t0, c_t1)), None)
+                    if hit is not None:
+                        stats['auto_dropped'].append((ev.event_id, st.station, kind, hit))
+                        continue
                 if cfg['zscore']:
                     w = (w - np.mean(w)) / (np.std(w) + 1e-10)
                 windows.append(np.asarray(w, dtype=np.float32))
