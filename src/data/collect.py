@@ -145,20 +145,33 @@ def catalog_events(t0, t1, lat, lon, minmag=2.0, radius_deg=2.0, client_name='US
 # Preprocessing (matches the AK notebook: detrend, demean, bandpass, 100 Hz)
 # ----------------------------------------------------------------------------
 
-def preprocess(tr, freqmin=BANDPASS[0], freqmax=BANDPASS[1], edge_sec=EDGE_SEC):
+def preprocess(tr, freqmin=BANDPASS[0], freqmax=BANDPASS[1], edge_sec=EDGE_SEC, taper_pct=None,
+               resample_first=True):
     """
     Training-data preprocessing on one gap-free trace; returns a copy.
 
     Fixed-length taper: a percentage of a day-long trace would eat whole
     windows, and callers skip windows within ``edge_sec`` of a segment end.
+
+    ``taper_pct`` (a fraction of the trace at each end) replaces the fixed
+    taper, and ``resample_first=False`` filters at the native rate before
+    resampling. The AK event collector passes ``taper_pct=0.05,
+    resample_first=False`` to reproduce the notebook that built the July 2026
+    AK set; the defaults are unchanged for the continuous-window collector.
     """
     tr = tr.copy()
     tr.data = tr.data.astype(np.float64)  # miniSEED ints would overflow in x**2
     tr.detrend('linear')
     tr.detrend('demean')
-    tr.taper(max_percentage=None, max_length=edge_sec)
-    _to_target_rate(tr)
+    if taper_pct is not None:
+        tr.taper(max_percentage=taper_pct)
+    else:
+        tr.taper(max_percentage=None, max_length=edge_sec)
+    if resample_first:
+        _to_target_rate(tr)
     tr.filter('bandpass', freqmin=freqmin, freqmax=freqmax, corners=4)
+    if not resample_first:
+        _to_target_rate(tr)
     return tr
 
 
