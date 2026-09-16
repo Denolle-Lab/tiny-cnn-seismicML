@@ -1,0 +1,56 @@
+# AK (Alaska Seismic Network) earthquake / noise windows for the Earthquake class.
+#
+# Reproducible pull:  python scripts/collect_ak_events.py --config configs/ak_events.yaml
+#
+# Replaces notebooks/02_labeling/download_AK_only_data.ipynb as the way to build the
+# AK_* file set that trained models/compact-v2. Events come from the USGS catalog,
+# P arrivals from the ComCat phase-data product (human-reviewed picks), waveforms
+# from IRIS. Output goes to notebooks/02_labeling/labeled_data/ in the same layout
+# as scripts/collect_continuous_windows.py:
+#   <prefix>_waveforms_<stamp>.npy   object array of float32 windows (ragged, see windows:)
+#   <prefix>_labels_<stamp>.npy      global label integers (src/data/labels.py)
+#   <prefix>_metadata_<stamp>.csv    one row per window
+#   <prefix>_summary_<stamp>.txt     counts and the command line
+#   <prefix>_config_<stamp>.yaml     the resolved settings this run used
+#
+# Every key under collection: overrides the CLI flag of the same name; flags absent
+# from the config apply as given (same convention as configs/am_stations.yaml).
+
+region:
+  name: Anchorage, Alaska
+  min_lat: 61.0157
+  max_lat: 61.2795
+  min_lon: -150.2953
+  max_lon: -149.6063
+  center_lat: 61.15          # notebook value; sets the longitude pad of the catalog box
+  # The catalog box is padded by max_station_distance_km so events recorded
+  # by the region's stations are not cut off at the box edge.
+
+collection:
+  network: AK
+  prefix: AK
+  start: 2020-01-01          # catalog search range (UTC)
+  end: 2025-12-01
+  min_magnitude: 3.0
+  max_magnitude: 7.0
+  max_events: 700            # events processed, in catalog time order
+  max_station_distance_km: 150
+  max_stations_per_event: 10
+  channels: [BHZ, HHZ]       # vertical broadband channels, in order of preference
+  station_pad_deg: 0.5       # station search box = region box +/- this
+  freqmin: 2.0               # training bandpass, AK convention (Hz)
+  freqmax: 20.0
+  # Windows (random-shift CNN scheme, see train_cnn_multiclass.ipynb cell 8):
+  #   earthquake = [P - eq_pre_sec, P + eq_post_sec]  -> 120 s, P at 30 s (p_offset_sec)
+  #   noise      = [P - noise_pre_sec, P - noise_end_sec] -> 60 s of pre-event noise
+  eq_pre_sec: 30.0
+  eq_post_sec: 90.0
+  noise_pre_sec: 90.0
+  noise_end_sec: 30.0
+  zscore: false              # filtered counts like the AM sets (training z-scores each crop); true = July 2026 format
+  # Manual review: drop the 98 windows rejected by eye in the July 2026 run
+  # (docs/ak_dropped_windows.csv, all pre-event noise). With drop_manual true
+  # the pull reproduces the set behind models/compact-v2; false keeps everything.
+  drop_manual: true
+  drop_list: docs/ak_dropped_windows.csv   # relative to the repo root
+  request_delay_sec: 0.2     # pause between IRIS requests

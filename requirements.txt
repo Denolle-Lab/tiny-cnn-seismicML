@@ -8,6 +8,7 @@ scikit-learn>=1.3.0
 
 # Seismology
 obspy>=1.4.0
+usgs-libcomcat>=2.1  # reviewed P picks from ComCat for scripts/collect_ak_events.py; needs GDAL (conda: conda install -c conda-forge fiona)
 
 # Visualization
 matplotlib>=3.7.0
