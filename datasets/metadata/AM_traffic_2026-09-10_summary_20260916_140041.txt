@@ -1,7 +1,7 @@
 Dataset AM_traffic_2026-09-10
 ============================================================
 
-Generated: 2026-09-16 12:15:52
+Generated: 2026-09-16 14:00:41
 Command: scripts/collect_continuous_windows.py --config configs/am_stations.yaml
 Range: 2026-09-10T08:00:00.000000Z -> 2026-09-11T08:00:00.000000Z
 Window: 60 s @ 100 Hz, no overlap, bandpass 2.0-20.0 Hz
@@ -14,12 +14,10 @@ R1796         204      230
 R2A1A         237      230
 R3130         227      216
 R4017         233      214
-R9CCB         237      230
 R9EA1         230      214
-RF528         230      209
-S8E18         233      228
+RF528         230      223
 
 Files:
-  AM_traffic_2026-09-10_waveforms_20260916_121552.npy  n=3602
-  AM_traffic_2026-09-10_labels_20260916_121552.npy
-  AM_traffic_2026-09-10_metadata_20260916_121552.csv
+  AM_traffic_2026-09-10_waveforms_20260916_140041.npy  n=2688
+  AM_traffic_2026-09-10_labels_20260916_140041.npy
+  AM_traffic_2026-09-10_metadata_20260916_140041.csv
