@@ -65,6 +65,8 @@ collection:
   burst_factor: 20        # night window with raw peak >= 20 x station night median rms -> Traffic
   exclude_events: true    # drop windows overlapping USGS M>=2 events within 2 deg (origin to +120 s)
   positive_keep: 0.3      # daytime Traffic is abundant; ~215 per station-day is plenty, keeps the disk in check
+  min_day_night_ratio: 2  # a station-day counts only if its day median is 2x its night median (5-30 Hz rms):
+                          # R9CCB never is, S8E18 never is, and every station is weaker on weekends and Labor Day
   review_sheet: 0
   days:
     - {start: 2026-09-07, end: 2026-09-13}   # Mon to Sun, local calendar days

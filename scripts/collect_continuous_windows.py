@@ -158,6 +158,10 @@ def parse_args():
     p.add_argument('--event-radius-deg', type=float, default=2.0)
     p.add_argument('--event-coda-sec', type=float, default=120.0,
                    help='Exclusion runs from origin time to origin + this many seconds')
+    p.add_argument('--min-day-night-ratio', type=float, default=None,
+                   help='timeofday: drop a station from the run unless its median day-class band rms is at least '
+                        'this multiple of its median night rms (a time-of-day label means nothing at a site with '
+                        'no diurnal cycle: AM.R9CCB sits at 1.0-1.2x every day)')
     p.add_argument('--tz', default='America/Anchorage', help='Local time zone for --label-from timeofday')
     p.add_argument('--day-hours', type=int, nargs=2, default=(7, 19), metavar=('H0', 'H1'),
                    help='Local hours [H0, H1) labeled --class-name')
@@ -210,7 +214,7 @@ def runs_from_config(args):
         # carry every setting that changes the output (reproducible pull).
         for key in ('channel', 'chunk_hours', 'events', 'event_pad_sec', 'event_search_sec', 'event_detect_factor',
                     'event_offsets', 'noise_keep', 'positive_keep', 'noise_hours', 'noise_max_ratio',
-                    'rule_rms_factor', 'rule_reference', 'rule_local_min',
+                    'min_day_night_ratio', 'rule_rms_factor', 'rule_reference', 'rule_local_min',
                     'rule_min_active_sec', 'rule_coincidence', 'reference_rms',
                     'rule_band', 'tz', 'day_hours', 'night_hours', 'burst_factor', 'exclude_events',
                     'event_minmag', 'event_radius_deg', 'event_coda_sec', 'freqmin', 'freqmax',
@@ -423,6 +427,22 @@ def collect(args):
             print(report.to_string(index=False))
             Path(args.out).mkdir(parents=True, exist_ok=True)
             report.to_csv(Path(args.out) / f'{prefix}_events_report.csv', index=False)
+    if args.label_from == 'timeofday' and args.min_day_night_ratio:
+        col = 'rms_band' if 'rms_band' in meta else 'rms'
+        med = meta.groupby(['station', 'label'])[col].median().unstack()
+        ratio = (med.get(positive_label) / med.get(0)).fillna(0.0)
+        weak = ratio[ratio < args.min_day_night_ratio]
+        if len(weak):
+            print('\nStations without a day/night contrast dropped from this run (median day / night band rms): '
+                  + ', '.join(f'{k}={v:.1f}x' for k, v in weak.items()))
+            keep = ~meta['station'].isin(weak.index).to_numpy()
+            X, meta = X[keep], meta[keep].reset_index(drop=True)
+            band_secs = [b for b, k in zip(band_secs, keep) if k]
+            meta['window_id'] = np.arange(len(meta))
+        meta['day_night_ratio'] = meta['station'].map(ratio).round(2)
+        if meta.empty:
+            print('No station in this run passes --min-day-night-ratio; nothing written')
+            return
     if args.label_from == 'timeofday' and args.burst_factor > 0:
         counts_burst = relabel_bursts(meta, positive_label, args.burst_factor)
         print(f'\nNight windows relabeled {LABEL_MAP[positive_label]} as single-vehicle bursts '
