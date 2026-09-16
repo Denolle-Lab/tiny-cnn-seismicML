@@ -1,0 +1,5 @@
+station,event_id,detected,peak_ratio,n_windows,n_runs
+K222,coastal_classic_out_2026-08-27,True,18.646050210536377,1,1
+K222,glacier_discovery_out_2026-08-27,True,10.316731814366985,1,1
+K222,glacier_discovery_back_2026-08-27,True,13.112366797947699,2,1
+K222,coastal_classic_back_2026-08-27,True,24.919797920247678,2,1
