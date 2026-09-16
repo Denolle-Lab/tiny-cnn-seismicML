@@ -70,3 +70,7 @@ Thumbs.db
 # Small hand-made reference tables are committed even though data CSVs are not
 !configs/events/*.csv
 !docs/*.csv
+
+# Dataset manifests: per-window metadata (times, labels, features), never waveforms
+!datasets/
+!datasets/**

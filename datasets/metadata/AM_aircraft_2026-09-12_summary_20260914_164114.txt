@@ -1,0 +1,19 @@
+Dataset AM_aircraft_2026-09-12
+============================================================
+
+Generated: 2026-09-14 16:41:15
+Command: scripts/collect_continuous_windows.py --config configs/aircraft_stations.yaml --out /private/tmp/claude-501/-Users-marinedenolle-GitHub-tiny-cnn-seismicML/14866063-6f3b-42e4-8717-ad219beeab1d/scratchpad/aircraft_data
+Range: 2026-09-12T08:00:00.000000Z -> 2026-09-13T08:00:00.000000Z
+Window: 60 s @ 100 Hz, no overlap, bandpass 2-45 Hz
+Positive class: Aircraft (label 5), method rule
+
+Windows per station and label:
+label_name  Aircraft  Noise
+station                    
+R9286             11   1387
+RFD97             10   1363
+
+Files:
+  AM_aircraft_2026-09-12_waveforms_20260914_164114.npy  n=2771
+  AM_aircraft_2026-09-12_labels_20260914_164114.npy
+  AM_aircraft_2026-09-12_metadata_20260914_164114.csv

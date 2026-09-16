@@ -1,0 +1,18 @@
+Dataset AK_train_full_2026-09-09
+============================================================
+
+Generated: 2026-09-14 13:05:47
+Command: scripts/collect_continuous_windows.py --network AK --station K222 --start 2026-09-09T08:00:00 --end 2026-09-10T08:00:00 --class-name Train --label-from events --events configs/events/arr_summer_2026.csv --event-search-sec 900 --event-detect-factor 3 --exclude-events --prefix AK_train_full_2026-09-09 --out /private/tmp/claude-501/-Users-marinedenolle-GitHub-tiny-cnn-seismicML/14866063-6f3b-42e4-8717-ad219beeab1d/scratchpad/report_data
+Range: 2026-09-09T08:00:00.000000Z -> 2026-09-10T08:00:00.000000Z
+Window: 60 s @ 100 Hz, no overlap, bandpass 2.0-20.0 Hz
+Positive class: Train (label 4), method events
+
+Windows per station and label:
+label_name  Noise  Train
+station                 
+K222         1228      7
+
+Files:
+  AK_train_full_2026-09-09_waveforms_20260914_130547.npy  n=1235
+  AK_train_full_2026-09-09_labels_20260914_130547.npy
+  AK_train_full_2026-09-09_metadata_20260914_130547.csv
