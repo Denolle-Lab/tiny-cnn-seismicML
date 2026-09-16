@@ -430,7 +430,10 @@ def collect(args):
     if args.label_from == 'timeofday' and args.min_day_night_ratio:
         col = 'rms_band' if 'rms_band' in meta else 'rms'
         med = meta.groupby(['station', 'label'])[col].median().unstack()
-        ratio = (med.get(positive_label) / med.get(0)).fillna(0.0)
+        stations = med.index
+        day = med[positive_label] if positive_label in med.columns else pd.Series(np.nan, index=stations)
+        night = med[0] if 0 in med.columns else pd.Series(np.nan, index=stations)
+        ratio = (day / night).fillna(0.0)  # a station with only one class has no contrast to measure
         weak = ratio[ratio < args.min_day_night_ratio]
         if len(weak):
             print('\nStations without a day/night contrast dropped from this run (median day / night band rms): '
