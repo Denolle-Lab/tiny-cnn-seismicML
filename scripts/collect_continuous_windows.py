@@ -117,8 +117,15 @@ def parse_args():
     p.add_argument('--event-detect-factor', type=float, default=3.0,
                    help='events: rms must reach factor x the median rms of the search span')
     p.add_argument('--noise-keep', type=float, default=1.0,
-                   help='events: keep this fraction of the Noise windows (seeded), all positives kept; '
-                        'a season of one station is mostly Noise otherwise')
+                   help='keep this fraction of the Noise windows (seeded); a season of one station is mostly Noise')
+    p.add_argument('--positive-keep', type=float, default=1.0,
+                   help='keep this fraction of the positive windows (seeded); daytime Traffic is abundant')
+    p.add_argument('--noise-hours', type=int, nargs=2, default=None, metavar=('H0', 'H1'),
+                   help='keep Noise only in local hours [H0, H1): makes Noise mean the same thing in every set '
+                        '(timeofday mode already does this through --night-hours)')
+    p.add_argument('--noise-max-ratio', type=float, default=None,
+                   help='drop Noise windows whose band rms exceeds this multiple of the station rolling median '
+                        '(+/- --rule-local-min): unscheduled trains and other unlabeled events stay out of Noise')
     p.add_argument('--event-offsets', default=None,
                    help='events: per-station minutes added to event times, e.g. "K208=+9,R1796=+8,K222=+30"')
 
@@ -202,7 +209,8 @@ def runs_from_config(args):
         # Any collection key that names a flag overrides it, so the YAML can
         # carry every setting that changes the output (reproducible pull).
         for key in ('channel', 'chunk_hours', 'events', 'event_pad_sec', 'event_search_sec', 'event_detect_factor',
-                    'event_offsets', 'noise_keep', 'rule_rms_factor', 'rule_reference', 'rule_local_min',
+                    'event_offsets', 'noise_keep', 'positive_keep', 'noise_hours', 'noise_max_ratio',
+                    'rule_rms_factor', 'rule_reference', 'rule_local_min',
                     'rule_min_active_sec', 'rule_coincidence', 'reference_rms',
                     'rule_band', 'tz', 'day_hours', 'night_hours', 'burst_factor', 'exclude_events',
                     'event_minmag', 'event_radius_deg', 'event_coda_sec', 'freqmin', 'freqmax',
@@ -405,17 +413,13 @@ def collect(args):
         report = pd.concat(reports, ignore_index=True) if reports else pd.DataFrame()
         keep = ~meta['drop'].to_numpy()
         n_ambiguous = int((~keep).sum())
-        if args.noise_keep < 1.0:
-            noise = (meta['label'].to_numpy() == 0) & keep
-            keep &= ~noise | (rng.random(len(meta)) < args.noise_keep)
         X = X[keep]
         meta = meta[keep].drop(columns=['drop']).reset_index(drop=True)
         meta['window_id'] = np.arange(len(meta))
         if len(report):
             print(f'\nScheduled events: {int(report.detected.sum())} of {len(report)} detected '
                   f'(rms >= {args.event_detect_factor:g} x span median within +/- {args.event_search_sec:g} s); '
-                  f'{n_ambiguous} ambiguous windows dropped'
-                  + (f', Noise subsampled to {args.noise_keep:g}' if args.noise_keep < 1.0 else ''))
+                  f'{n_ambiguous} ambiguous windows dropped')
             print(report.to_string(index=False))
             Path(args.out).mkdir(parents=True, exist_ok=True)
             report.to_csv(Path(args.out) / f'{prefix}_events_report.csv', index=False)
@@ -466,6 +470,31 @@ def collect(args):
         print(f'\nRule factor {args.rule_rms_factor}, {args.rule_band[0]:g}-{args.rule_band[1]:g} Hz, reference rms '
               f'per station ({"given" if args.reference_rms else args.rule_reference}, median shown): '
               + ', '.join(f'{k}={v:.1f}' for k, v in refs.items()))
+    # ---- final pass, every mode: what Noise means, and how much of each class to keep
+    keep = np.ones(len(meta), dtype=bool)
+    is_noise = meta['label'].to_numpy() == 0
+    if args.noise_hours is not None:
+        hours = np.array([int(local_hour(UTCDateTime(x), tz)) for x in meta['start_time']])
+        in_hours = (hours >= args.noise_hours[0]) & (hours < args.noise_hours[1])
+        keep &= ~is_noise | in_hours
+        print(f'\nNoise restricted to {args.noise_hours[0]:02d}-{args.noise_hours[1]:02d} local: '
+              f'{int((is_noise & ~in_hours).sum())} Noise windows outside dropped')
+    if args.noise_max_ratio is not None:
+        k = int(args.rule_local_min)
+        col = 'rms_band' if 'rms_band' in meta else 'rms'
+        local_med = meta.groupby('station')[col].transform(lambda r: r.rolling(2 * k + 1, center=True, min_periods=k).median())
+        loud = is_noise & (meta[col].to_numpy() > args.noise_max_ratio * local_med.to_numpy())
+        keep &= ~loud
+        print(f'Noise windows above {args.noise_max_ratio:g} x the local median dropped: {int(loud.sum())}')
+    if args.noise_keep < 1.0:
+        keep &= ~is_noise | (rng.random(len(meta)) < args.noise_keep)
+    if args.positive_keep < 1.0:
+        keep &= is_noise | (rng.random(len(meta)) < args.positive_keep)
+    if not keep.all():
+        X = X[keep]
+        meta = meta[keep].reset_index(drop=True)
+        meta['window_id'] = np.arange(len(meta))
+        print(f'Kept {len(meta)} windows (noise_keep {args.noise_keep:g}, positive_keep {args.positive_keep:g})')
     y = meta['label'].to_numpy(dtype=np.int64)
 
     paths = write_dataset(args.out, prefix, X, y, meta, summary_lines=[
