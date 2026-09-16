@@ -46,12 +46,11 @@ collection:
   event_search_sec: 900
   event_detect_factor: 3
   exclude_events: true
-  noise_keep: 0.05          # ~70 Noise windows per station-day; positives all kept
-  review_sheet: 24
+  noise_hours: [1, 5]       # Noise means the same quiet hours as in the traffic sets
+  noise_max_ratio: 3        # drop Noise windows 3x above the local median: unscheduled (freight) trains
+  noise_keep: 0.3           # ~70 Noise windows per station-day after the two filters; positives all kept
+  review_sheet: 0
   tz: America/Anchorage
   days:
-    - 2026-09-09            # test days
-    - 2026-09-12
-    # the whole passenger season, one run per day (~2 min each at IRIS):
-    # - {start: 2026-05-15, end: 2026-09-13}
+    - {start: 2026-05-15, end: 2026-09-13}   # the whole passenger season, ~2 min per day at IRIS
   prefix_pattern: "AK_train_{date}"

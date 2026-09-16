@@ -53,9 +53,10 @@ collection:
   freqmin: 2
   freqmax: 45
   exclude_events: true
-  review_sheet: 24
+  noise_hours: [1, 5]       # Noise means the same quiet hours as in the other sets
+  noise_keep: 0.25
+  review_sheet: 0
   tz: America/Anchorage
   days:
-    - 2026-09-09
-    - 2026-09-12
+    - {start: 2026-08-17, end: 2026-09-13}   # four weeks; the review site holds 09-09 and 09-12
   prefix_pattern: "AM_aircraft_{date}"

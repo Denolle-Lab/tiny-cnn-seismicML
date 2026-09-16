@@ -1,0 +1,19 @@
+Dataset AM_aircraft_2026-08-30
+============================================================
+
+Generated: 2026-09-16 12:50:18
+Command: scripts/collect_continuous_windows.py --config configs/aircraft_stations.yaml
+Range: 2026-08-30T08:00:00.000000Z -> 2026-08-31T08:00:00.000000Z
+Window: 60 s @ 100 Hz, no overlap, bandpass 2-45 Hz
+Positive class: Aircraft (label 5), method rule
+
+Windows per station and label:
+label_name  Aircraft  Noise
+station                    
+R9286             29     53
+RFD97             18     67
+
+Files:
+  AM_aircraft_2026-08-30_waveforms_20260916_125018.npy  n=167
+  AM_aircraft_2026-08-30_labels_20260916_125018.npy
+  AM_aircraft_2026-08-30_metadata_20260916_125018.csv

@@ -1,0 +1,18 @@
+Dataset AK_train_2026-08-05
+============================================================
+
+Generated: 2026-09-16 13:23:59
+Command: scripts/collect_continuous_windows.py --config configs/train_stations.yaml
+Range: 2026-08-05T08:00:00.000000Z -> 2026-08-06T08:00:00.000000Z
+Window: 60 s @ 100 Hz, no overlap, bandpass 2.0-20.0 Hz
+Positive class: Train (label 4), method events
+
+Windows per station and label:
+label_name  Noise  Train
+station                 
+K222           69      5
+
+Files:
+  AK_train_2026-08-05_waveforms_20260916_132359.npy  n=74
+  AK_train_2026-08-05_labels_20260916_132359.npy
+  AK_train_2026-08-05_metadata_20260916_132359.csv

@@ -24,20 +24,39 @@ stations:
     sensors: RS1D (EHZ only), 100 Hz
     installed: 2023-10-03
   - code: R4017
-    role: contrast
-    school: Mears Middle School (0.69 km)
+    role: diversity
+    school: Mears Middle School (0.69 km); Minnesota Dr south
     sensors: RS3D (EHE/EHN/EHZ), 100 Hz
     installed: 2023-10-02
     notes: >
       Station used in the original rule-based notebook and in the
       collector's calibration (docs in scripts/collect_continuous_windows.py).
+  # Other neighbourhoods, so the Traffic class is not one school's spectrum
+  # (all six served data every day of the week of 2026-09-07; checked 2026-09-16)
+  - code: R9EA1
+    role: diversity
+    school: Mears Middle School (0.61 km), W 100th Ave
+  - code: R2A1A
+    role: diversity
+    school: Frontier Charter School (0.63 km), W Northern Lights Blvd
+  - code: S8E18
+    role: diversity
+    school: Service High School (0.46 km), Abbott Rd
+  - code: R9CCB
+    role: diversity
+    school: Hanshew Middle School (0.81 km), Lake Otis Pkwy
+  - code: RF528
+    role: diversity
+    school: Williwaw Elementary (0.72 km), east side near the Glenn Hwy
 
 # Reproducible pull:  python scripts/collect_continuous_windows.py --config configs/am_stations.yaml
 # One run per day for every station whose role is in `roles`; output goes to
 # notebooks/02_labeling/labeled_data/<prefix>_{waveforms,labels,metadata}_<stamp>.*
+# The first two-day Romig-only pull (2026-09-09, 09-12; prefix AM_romig_traffic_<date>)
+# is what the review site and the verification report were built from.
 collection:
   network: AM
-  roles: [primary]        # stations above to pull (R1796, R3130)
+  roles: [primary, diversity]   # Romig plus six other neighbourhoods
   class_name: Traffic
   label_from: timeofday
   tz: America/Anchorage
@@ -45,8 +64,10 @@ collection:
   night_hours: [1, 5]     # -> Noise, except isolated vehicle passes (below)
   burst_factor: 20        # night window with raw peak >= 20 x station night median rms -> Traffic
   exclude_events: true    # drop windows overlapping USGS M>=2 events within 2 deg (origin to +120 s)
-  review_sheet: 24
+  positive_keep: 0.3      # daytime Traffic is abundant; ~215 per station-day is plenty, keeps the disk in check
+  min_day_night_ratio: 2  # a station-day counts only if its day median is 2x its night median (5-30 Hz rms):
+                          # R9CCB never is, S8E18 never is, and every station is weaker on weekends and Labor Day
+  review_sheet: 0
   days:
-    - 2026-09-09          # Wednesday (local calendar day in tz)
-    - 2026-09-12          # Saturday
-  prefix_pattern: "AM_romig_traffic_{date}"
+    - {start: 2026-09-07, end: 2026-09-13}   # Mon to Sun, local calendar days
+  prefix_pattern: "AM_traffic_{date}"

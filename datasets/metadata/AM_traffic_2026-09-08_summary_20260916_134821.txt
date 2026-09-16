@@ -1,0 +1,23 @@
+Dataset AM_traffic_2026-09-08
+============================================================
+
+Generated: 2026-09-16 13:48:21
+Command: scripts/collect_continuous_windows.py --config configs/am_stations.yaml
+Range: 2026-09-08T08:00:00.000000Z -> 2026-09-09T08:00:00.000000Z
+Window: 60 s @ 100 Hz, no overlap, bandpass 2.0-20.0 Hz
+Positive class: Traffic (label 1), method timeofday
+
+Windows per station and label:
+label_name  Noise  Traffic
+station                   
+R1796         210      232
+R2A1A         236      225
+R3130         230      215
+R4017         233      213
+R9EA1         231      211
+RF528         237      228
+
+Files:
+  AM_traffic_2026-09-08_waveforms_20260916_134821.npy  n=2701
+  AM_traffic_2026-09-08_labels_20260916_134821.npy
+  AM_traffic_2026-09-08_metadata_20260916_134821.csv
