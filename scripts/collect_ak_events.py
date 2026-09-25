@@ -451,7 +451,7 @@ def station_catalog(cfg, usgs, st):
     Every USGS event of M >= event_minmag within event_radius_deg of one station
     over the whole collection range, as (origin, mag, dist_km, event_id) tuples:
     the candidates whose picks may fall inside a noise window. Queried per
-    calendar year (USGS caps one response at 20000 events) and fails loudly:
+    quarter (a year of these events can exceed the USGS 20000-per-response cap) and fails loudly:
     a silent empty list would switch the exclusion off for the station.
     """
     from obspy.geodetics import gps2dist_azimuth

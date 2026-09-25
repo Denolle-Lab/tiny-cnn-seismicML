@@ -13,8 +13,9 @@
 #   <prefix>_summary_<stamp>.txt     counts and the command line
 #   <prefix>_config_<stamp>.yaml     the resolved settings this run used
 #
-# Every key under collection: overrides the CLI flag of the same name; flags absent
-# from the config apply as given (same convention as configs/am_stations.yaml).
+# Any key under collection: overrides the built-in default of the same name; a
+# flag typed on the command line then overrides the config (this script lets typed
+# flags win, unlike configs/am_stations.yaml where the config wins over flags).
 
 region:
   name: Anchorage, Alaska
@@ -51,7 +52,7 @@ collection:
   # Manual review: drop the 98 windows rejected by eye in the July 2026 run
   # (docs/ak_dropped_windows.csv, all pre-event noise). With drop_manual true
   # the pull reproduces the set behind models/compact-v2; false keeps everything.
-  drop_manual: true # this was investigated in July 2026 and the 98 windows were dropped from the training set due to having earthquakes appear in noise windows, we could also utilize libcomc
+  drop_manual: true # this was investigated in July 2026 and the 98 windows were dropped from the training set due to having earthquakes appear in noise windows, we could also utilize libcomcat
   drop_list: docs/ak_dropped_windows.csv   # relative to the repo root
   # Pick exclusion (optional, off): drop a noise window when another USGS event
   # (M >= event_minmag within event_radius_deg of the station, origin up to
