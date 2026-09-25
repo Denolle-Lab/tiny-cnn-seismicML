@@ -68,16 +68,19 @@ The complete workflow consists of three main steps:
 
 ### 1. Data Labeling
 
-Generate the current AK Network Noise/Earthquake training data:
+Generate the AK Network Noise/Earthquake training data with the event collector:
 
 ```bash
-jupyter notebook notebooks/02_labeling/download_AK_only_data.ipynb
+python scripts/collect_ak_events.py --config configs/ak_events.yaml
 ```
 
-This notebook:
-- Downloads earthquake and noise windows from the Alaska Seismic Network
-- Uses 60-second, 100 Hz single-channel windows
-- Saves `AK_waveforms_*`, `AK_labels_*`, and `AK_metadata_*` files to `notebooks/02_labeling/labeled_data/`
+This script (the script form of `notebooks/02_labeling/download_AK_only_data.ipynb`):
+- Queries the USGS catalog for M3.0 to 7.0 events near Anchorage, 2020 to 2025, and takes P arrivals from the reviewed ComCat picks (`usgs-libcomcat`)
+- Downloads AK broadband waveforms from IRIS and cuts a 120 s earthquake window (P at 30 s) and a 60 s pre-event noise window per station, 100 Hz, vertical channel, bandpassed 2 to 20 Hz
+- Drops the 98 noise windows rejected by eye in the July 2026 review (`docs/ak_dropped_windows.csv`, `drop_manual` in the config)
+- Saves `AK_waveforms_*`, `AK_labels_*`, `AK_metadata_*`, `AK_summary_*` and `AK_config_*` to `notebooks/02_labeling/labeled_data/`
+
+Region, magnitude range, dates, `max_events` and the window lengths live in `configs/ak_events.yaml`; any flag typed on the command line overrides the config, so `--max-events 5` is a quick test. Waveforms are saved as counts like the AM sets. `--zscore` writes per-window normalized windows instead, which reproduces the July 2026 `AK_*` files byte for byte. About 16 minutes for the full pull.
 
 For the earlier three-class rule-based workflow, use:
 
