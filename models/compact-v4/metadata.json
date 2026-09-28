@@ -1,0 +1,11 @@
+{
+  "$schema": "https://collaborative-learning.concord.org/schemas/seismic-model/v1.json",
+  "id": "compact-v4",
+  "architecture": "compact",
+  "class_names": ["Noise", "Traffic", "Train", "Aircraft"],
+  "sampling_rate": 100,
+  "window_duration": 60,
+  "instrument_types": ["H", "N"],
+  "weightsUrl": "./weights.json",
+  "test_accuracy": 0.9392
+}
