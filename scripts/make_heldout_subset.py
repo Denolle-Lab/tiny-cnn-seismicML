@@ -11,8 +11,9 @@ left to inference, as in the training notebook.
 Usage (from repo root):
   python scripts/make_heldout_subset.py
 
-Output: datasets/heldout_inference/heldout_waveforms.npy  (n, 6000) float32
-        datasets/heldout_inference/heldout_metadata.csv   one row per window
+Output: datasets/heldout_inference/heldout_waveforms.npy  (n, 6000) float32, local only
+            (git-ignored: the Raspberry Shake terms forbid redistributing waveforms)
+        datasets/heldout_inference/heldout_metadata.csv   one row per window, committed
 """
 
 import sys

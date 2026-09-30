@@ -54,6 +54,7 @@
   .metrics { font-size:13.5px; }
   .files { font-size:13px; margin:2px 0 0; overflow-wrap:anywhere; }
   figure { margin:4px 0 0; }
+  .gallery { display:grid; gap:18px; margin:10px 0 18px; }
   figure img { width:100%; height:auto; background:#fff; border:1px solid var(--rule); border-radius:2px; }
   figcaption { font-size:13px; color:var(--muted); margin-top:4px; }
   table.inf { font-size:12.5px; min-width:980px; }
@@ -251,7 +252,7 @@ st = Client("https://data.raspberryshake.org").get_waveforms("AM", "R1796", "00"
   "class_names": ["Noise", "Traffic"],
   "sampling_rate": 100,
   "window_duration": 60,
-  "instrument_types": ["B", "E", "H"],
+  "instrument_types": ["H", "N"],
   "weightsUrl": "./weights.json",
   "test_accuracy": 0.9596
 }</pre>
@@ -260,13 +261,21 @@ st = Client("https://data.raspberryshake.org").get_waveforms("AM", "R1796", "00"
   <ul>
     <li>one vertical component, 60 s at 100 Hz (6,000 samples);</li>
     <li>band-passed 2–20 Hz, then z-scored over the window;</li>
-    <li>a sensor like the training ones: <code>instrument_types</code> lists SEED band codes, B = broadband (BHZ), E = short-period geophone (EHZ), H = high-rate accelerometer (HNZ). compact-v4 and standard-v3 still list <code>["H", "N"]</code> from an earlier convention.</li>
+    <li>a sensor like the training ones: <code>instrument_types</code> lists SEED instrument codes, the second letter of the channel name. H = seismometer (the BHZ broadbands and EHZ geophones), N = accelerometer (K222's HNZ).</li>
   </ul>
   <p>Output is a softmax over <code>class_names</code>, in that order. A model always picks one of its own classes, so a two-class Noise/Traffic model will call an earthquake Noise or Traffic.</p>
 
   <h2 id="inference">Held-out inference</h2>
   <p>The test splits above share stations and days with training. To see how the models do on data they have never touched, we collected new days at the same stations and drew 10 windows per class (seed 42): Romig on 2026-09-11, Turnagain on 2026-09-14, K222 on 2026-05-11 to 05-14 and 09-14, and 14 earthquakes (M3.0–3.9, 2026-08-14 to 09-24) at FIRE, RC01 and SSN. The same labeling rules were applied. Earthquake crops start 10 s before P.</p>
   <p>Only <strong>2 Train windows</strong> exist: 2026-09-14 was the last passenger day at K222, and on the four unused days before the season (05-11 to 05-14) only one scheduled passage reached the 3× detection threshold. Treat the Train results as anecdotes.</p>
+  <p>The waveforms themselves are not published, because the Raspberry Shake terms do not allow redistributing them. <code>heldout_metadata.csv</code> lists the network, station, channel and UTC start of every window, so the set can be rebuilt from the FDSN archives with <code>scripts/make_heldout_subset.py</code>. The plots show every window; the number on each panel matches the table.</p>
+  <div class="gallery">
+    <figure><img src="figures/heldout_earthquake.png" alt="The 10 held-out earthquake windows with spectrograms" loading="lazy"><figcaption>Earthquake: 10 windows, crops start 10 s before P.</figcaption></figure>
+    <figure><img src="figures/heldout_traffic.png" alt="The 10 held-out traffic windows with spectrograms" loading="lazy"><figcaption>Traffic: 10 windows from Romig on 2026-09-11.</figcaption></figure>
+    <figure><img src="figures/heldout_aircraft.png" alt="The 10 held-out aircraft windows with spectrograms" loading="lazy"><figcaption>Aircraft: 10 windows from Turnagain on 2026-09-14, band-passed 2–45 Hz.</figcaption></figure>
+    <figure><img src="figures/heldout_train.png" alt="The 2 held-out train windows with spectrograms" loading="lazy"><figcaption>Train: the only 2 unseen passages detected at K222.</figcaption></figure>
+    <figure><img src="figures/heldout_noise.png" alt="The 10 held-out noise windows with spectrograms, each on its own amplitude scale" loading="lazy"><figcaption>Noise: 10 windows across all four sites, each on its own amplitude scale. #4 shows a transient that looks like a vehicle pass.</figcaption></figure>
+  </div>
   <div class="legend">
     <span><span class="box" style="background:var(--panel)"></span>correct</span>
     <span><span class="box" style="background:var(--bad)"></span>wrong</span>
