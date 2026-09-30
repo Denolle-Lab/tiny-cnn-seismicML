@@ -7,5 +7,5 @@
   "window_duration": 60,
   "instrument_types": ["H", "N"],
   "weightsUrl": "./weights.json",
-  "test_accuracy": 0.9977
+  "test_accuracy": 0.989
 }
