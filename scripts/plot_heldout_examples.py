@@ -4,9 +4,11 @@ Plot the held-out inference windows, one figure per class, so the set can be
 shown without redistributing waveforms (the .npy stays local; the Raspberry
 Shake terms forbid redistributing it).
 
-Each panel is one window (waveform above spectrogram) titled with its
-subset_id, station, local time and how many models that know its class got
-it right, from heldout_predictions.csv.
+Each figure shows N_PER_CLASS windows of the class (seeded, spread
+round-robin across stations; Train across days), one panel per window
+(waveform above spectrogram) titled with its subset_id, station, local time
+and how many models that know its class got it right, from
+heldout_predictions.csv. Accuracy is reported on the whole set elsewhere.
 
 Usage (from repo root, after make_heldout_subset.py and run_heldout_inference.py):
   python scripts/plot_heldout_examples.py
@@ -31,7 +33,21 @@ from plot_label_report_figures import COLORS, panel
 SUBSET_DIR = REPO_ROOT / "datasets" / "heldout_inference"
 OUT_DIR = REPO_ROOT / "docs" / "figures"
 COLORS = {**COLORS, "Earthquake": "#b0413e"}
-N_COLS = 5
+N_COLS = 10
+N_PER_CLASS = 10
+SEED = 42
+
+
+def sample(sub, key, n, rng):
+    """Up to n rows of sub, taken round-robin across the values of key (each shuffled)."""
+    queues = [list(rng.permutation(g.index)) for _, g in sub.groupby(key)]
+    queues = [queues[i] for i in rng.permutation(len(queues))]
+    picks = []
+    while len(picks) < n and any(queues):
+        for q in queues:
+            if q and len(picks) < n:
+                picks.append(q.pop())
+    return sub.loc[picks]
 
 
 def main():
@@ -41,7 +57,10 @@ def main():
     scored = pred[pred.in_scope].assign(ok=lambda d: d.true == d.predicted)
     n_ok = scored.groupby("subset_id").ok.agg(["sum", "count"])
 
+    rng = np.random.default_rng(SEED)
+    meta["day"] = pd.to_datetime(meta.start_time, utc=True).dt.tz_convert("America/Anchorage").dt.date
     for name, sub in meta.groupby("label_name"):
+        sub = sample(sub, "day" if name == "Train" else "station", N_PER_CLASS, rng)
         sub = sub.sort_values(["station", "start_time"])
         n_rows = -(-len(sub) // N_COLS)
         fig, axes = plt.subplots(2 * n_rows, N_COLS, figsize=(3.4 * N_COLS, 2.5 * n_rows), squeeze=False,
