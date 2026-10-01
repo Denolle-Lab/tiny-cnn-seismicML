@@ -1,11 +1,15 @@
-Seismic CNN Training Summary - COMPACT Model
+Seismic CNN Training Summary - STANDARD Model
 ============================================================
 
 Date: 2026-07-09 09:46:44
 
 Model Configuration:
-  Type: compact
-  Parameters: 9,282
+  Model id: standard-v1
+  Checkpoint: seismic_cnn_standard_ak_20260709_094641.pth
+  Note: trained before provenance was recorded (2026-09-30); split by crop, not grouped,
+        and the saved weights are the last epoch. Not retrained in the grouped-split PR.
+  Type: standard
+  Parameters: 93,634
   Input shape: (batch, 1, 6000)
   Number of classes: 2
 
@@ -21,17 +25,17 @@ Dataset Split:
   Test: 298 samples
 
 Results:
-  Best validation loss: 0.0125
-  Final train accuracy: 99.20%
-  Final val accuracy: 99.33%
+  Best validation loss: 0.0073
+  Final train accuracy: 99.29%
+  Final val accuracy: 99.66%
   Test accuracy: 99.33%
 
 Classification Report:
               precision    recall  f1-score   support
 
-       Noise      0.989     0.989     0.989        93
-  Earthquake      0.995     0.995     0.995       205
+       Noise      1.000     0.978     0.989        93
+  Earthquake      0.990     1.000     0.995       205
 
     accuracy                          0.993       298
-   macro avg      0.992     0.992     0.992       298
+   macro avg      0.995     0.989     0.992       298
 weighted avg      0.993     0.993     0.993       298
