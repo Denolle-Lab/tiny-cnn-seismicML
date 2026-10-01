@@ -25,6 +25,7 @@ import torch
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MODELS_DIR = REPO_ROOT / "models"
+MIN_DELTA = 0.001  # early_stopping_min_delta in the training notebook
 
 
 def first_conv_kernel_tfjs(weights_path):
@@ -48,17 +49,35 @@ def find_checkpoint(model_dir, checkpoints):
     return None, None
 
 
+def saved_epoch(ckpt):
+    """Epoch whose weights the checkpoint holds.
+
+    Checkpoints with provenance (2026-09-30 on) keep the best epoch by the
+    notebook's early-stopping rule: a validation loss at least MIN_DELTA below
+    the best so far. Older ones kept the last epoch (shallow-copy bug).
+    """
+    val = ckpt["history"]["val_loss"]
+    if "provenance" not in ckpt:
+        return len(val)
+    best, best_epoch = float("inf"), 1
+    for epoch, v in enumerate(val, start=1):
+        if best - v >= MIN_DELTA:
+            best, best_epoch = v, epoch
+    return best_epoch
+
+
 def plot_history(model_id, ckpt_path, ckpt, out_path):
     h = ckpt["history"]
     epochs = np.arange(1, len(h["train_loss"]) + 1)
     best = int(np.argmin(h["val_loss"])) + 1
+    saved = saved_epoch(ckpt)
 
     fig, (ax_loss, ax_acc) = plt.subplots(1, 2, figsize=(11, 4))
     for ax, key, label in [(ax_loss, "loss", "Loss"), (ax_acc, "acc", "Accuracy (%)")]:
         ax.plot(epochs, h[f"train_{key}"], color="tab:blue", label="Train")
         ax.plot(epochs, h[f"val_{key}"], color="tab:orange", linestyle="--", label="Validation")
         ax.axvline(best, color="gray", linestyle=":", label=f"Lowest val loss (epoch {best})")
-        ax.axvline(epochs[-1], color="black", linewidth=0.8, label=f"Saved weights (epoch {epochs[-1]})")
+        ax.axvline(saved, color="black", linewidth=0.8, label=f"Saved weights (epoch {saved})")
         ax.set_xlabel("Epoch")
         ax.set_ylabel(label)
         ax.grid(alpha=0.3)
