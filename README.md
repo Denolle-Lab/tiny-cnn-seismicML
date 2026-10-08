@@ -1,491 +1,239 @@
 # tiny-cnn-seismicML
 
-A lightweight PyTorch CNN for detecting and classifying seismic signals from Raspberry Shake seismograms.
+Small convolutional neural networks (CNNs) that classify 60 s of vertical ground motion recorded around Anchorage, Alaska, as **Noise, Earthquake, Traffic, Train or Aircraft**. The models have 9k–94k parameters, so they run in a web browser on a classroom Chromebook. They are built for the SeismicML curriculum with the Concord Consortium (CLUE) and with Romig Middle School, which hosts two of the Raspberry Shake seismometers we use.
 
-## Overview
+**Project pages** (GitHub Pages, from [docs/](docs/)):
 
-This repository provides compact convolutional neural networks designed specifically for seismic signal classification. The notebooks support both the newer AK Network Noise/Earthquake workflow and the earlier rule-based Noise/Traffic/Earthquake workflow for Raspberry Shake seismometer data.
+| Page | What it shows |
+|---|---|
+| [docs/report.html](docs/report.html) | Illustrated report: the datasets, a map of Anchorage with Romig Middle School, the stations and the earthquakes, a catalog of signal types and of the 550 earthquakes, how the CNN predicts a class, and the limitations |
+| [docs/index_draft.html](docs/index_draft.html) | Every trained model: data, grouped split, test and held-out scores, training curves |
+| [docs/review/index.html](docs/review/index.html) | Review site: agree or disagree with labeled windows and download your decisions |
+| [docs/label_verification_2026-09-14.html](docs/label_verification_2026-09-14.html) | Labeling rules, their parameters, counts and check figures |
 
-### Features
+## What the project does
 
-- **Flexible Classification**: One on-disk label scheme (`src/data/labels.py`), per-model class subsets (earthquake-only today; Natural and Human models planned)
-- **Lightweight Architecture**: Optimized for efficiency with minimal parameters
-- **Two Model Variants**:
-  - `SeismicCNN`: Standard model with good performance (~100K parameters)
-  - `CompactSeismicCNN`: Ultra-compact model for edge devices (~20K parameters)
-- **Complete Pipeline**: From data labeling to training to inference
-- **AK Network Workflow**: Downloads professional Alaska Seismic Network windows for training
-- **Browser Explainer**: React/TensorFlow.js app for explaining compact CNN predictions
-- **Deployable Weights Pattern**: `models/<model-id>/metadata.json` + `weights.json` for browser consumers such as CLUE
-- **Preprocessing Pipeline**: Built-in utilities for seismogram preprocessing
-- **Data Augmentation**: Support for training data augmentation
-- **Easy to Use**: Interactive Jupyter notebooks and command-line scripts
-- **Real-Time Capable**: Apply trained models to any station and time window
+1. **Collect** labeled 60 s windows from public seismic data (FDSN): AK network broadbands and strong-motion sensors through EarthScope/IRIS, and Raspberry Shake geophones (network AM) at Anchorage schools.
+2. **Label** every window with a rule that can be rerun, never by hand. Earthquakes come from USGS ComCat P picks, traffic from the time of day at school Shakes, trains from the Alaska Railroad timetable, and aircraft from high-frequency bursts seen at two Shakes near ANC runway 15/33.
+3. **Train** a compact (9.4k parameter) or standard (94k parameter) 1-D CNN on a subset of classes. The training, validation and test split is grouped by earthquake or by station-day.
+4. **Evaluate** on a held-out set of 485 windows recorded after every training date.
+5. **Deploy** each model as a `models/<id>/` folder (`metadata.json` + TensorFlow.js `weights.json`) that a browser loads directly.
 
-## Installation
+| Label | Class | Data source | Status |
+|---|---|---|---|
+| 0 | Noise | quiet hours (01–05 local) at every station; pre-P windows for earthquakes | trained |
+| 1 | Traffic | 6 Raspberry Shakes at schools, incl. Romig (AM.R1796, R3130), week of 2026-09-07 | trained |
+| 2 | Earthquake | 477 ComCat events, M 3–6, 2020–2025, at AK.FIRE, RC01, SSN | trained |
+| 3 | Avalanche | — | planned, [#9](https://github.com/Denolle-Lab/tiny-cnn-seismicML/issues/9) |
+| 4 | Train | AK.K222 at Potter Marsh, 100 m from the railroad, May–Sep 2026 | trained |
+| 5 | Aircraft | AM.RFD97, R9286 in Turnagain, Aug–Sep 2026 | trained |
 
-### Requirements
+## Install
 
-- Python >= 3.8
-- PyTorch >= 2.0.0
-- NumPy >= 1.24.0
-- ObsPy >= 1.4.0 (for seismological data handling)
+Python 3.10 or newer is recommended. Either environment manager works.
 
-### Setup
+**pip + venv**
 
-1. Clone the repository:
 ```bash
 git clone https://github.com/Denolle-Lab/tiny-cnn-seismicML.git
 cd tiny-cnn-seismicML
-```
-
-2. Create a virtual environment (recommended):
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. Install dependencies:
-```bash
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-```
-
-4. (Optional) For Jupyter notebook support:
-```bash
-pip install jupyter ipykernel
+pip install jupyter ipykernel      # for the notebooks
 python -m ipykernel install --user --name=seismic-cnn
 ```
 
-## Quick Start
-
-### Workflow Overview
-
-The complete workflow consists of three main steps:
-
-1. **Label Data**: Download AK Noise/Earthquake windows or create rule-based labels
-2. **Train Model**: Train the CNN on labeled data
-3. **Predict**: Apply the trained model to new stations and time windows
-
-### 1. Data Labeling
-
-Generate the AK Network Noise/Earthquake training data with the event collector:
+**conda** (simpler if `usgs-libcomcat` fails to build, because it needs GDAL)
 
 ```bash
-python scripts/collect_ak_events.py --config configs/ak_events.yaml
-```
-
-This script (the script form of `notebooks/02_labeling/download_AK_only_data.ipynb`):
-- Queries the USGS catalog for M3.0 to 7.0 events near Anchorage, 2020 to 2025, and takes P arrivals from the reviewed ComCat picks (`usgs-libcomcat`)
-- Downloads AK broadband waveforms from IRIS and cuts a 120 s earthquake window (P at 30 s) and a 60 s pre-event noise window per station, 100 Hz, vertical channel, bandpassed 2 to 20 Hz
-- Drops the 98 noise windows rejected by eye in the July 2026 review (`docs/ak_dropped_windows.csv`, `drop_manual` in the config)
-- Saves `AK_waveforms_*`, `AK_labels_*`, `AK_metadata_*`, `AK_summary_*` and `AK_config_*` to `notebooks/02_labeling/labeled_data/`
-
-Region, magnitude range, dates, `max_events` and the window lengths live in `configs/ak_events.yaml`; any flag typed on the command line overrides the config, so `--max-events 5` is a quick test. Waveforms are saved as counts like the AM sets. `--zscore` writes per-window normalized windows instead, which reproduces the July 2026 `AK_*` files byte for byte. About 16 minutes for the full pull.
-
-For the earlier three-class rule-based workflow, use:
-
-```bash
-jupyter notebook notebooks/02_labeling/multi_class_labeling.ipynb
-```
-
-That notebook:
-- Downloads seismograms from multiple Raspberry Shake stations
-- Extracts features (STA/LTA, kurtosis, spectral energy, etc.)
-- Applies rule-based classification to label windows as Noise, Traffic, or Earthquake
-- Saves labeled data to `notebooks/02_labeling/labeled_data/` directory
-
-Note that this notebook cuts 5 s windows from 30 minutes around one earthquake, so its output does not mix with the 60 s AK windows.
-
-For the anthropogenic classes (Traffic, Train, Aircraft; issues #10 to #12) use the continuous-window collector, which writes 60 s / 100 Hz windows in the AK file layout with a provisional label and a review sheet:
-
-```bash
-# one station-day of Raspberry Shake data, daytime = Traffic, 01-05 local = Noise
-python scripts/collect_continuous_windows.py --network AM --station R4017 \
-    --start 2026-09-09 --end 2026-09-10 --class-name Traffic \
-    --label-from timeofday --review-sheet 24
-
-# train passages or ADS-B landings from a CSV with a "time" column
-python scripts/collect_continuous_windows.py --network AM --station R4017 \
-    --start 2026-09-09 --end 2026-09-10 --class-name Train \
-    --label-from events --events passages.csv
-```
-
-Output: `<NET>_<class>_waveforms_<stamp>.npy` (N, 6000), `_labels_` (global label integers), `_metadata_` (station, time, label method, per-window rms and band features, blank `reviewed` / `review_label` columns), a summary text file, and with `--review-sheet N` a PNG grid plus CSV to mark `keep` by eye. The pieces every collector shares (FDSN client with retries, the preprocessing chain, minute alignment, catalog overlap, the on-disk layout) live in `src/data/collect.py`, which imports without torch; an event-driven AK collector should build on the same module and write the same layout. `--label-from rule` flags windows whose rms exceeds 3 times a quiet reference (on AM.R4017 daytime rms is 4.7 times the 02 to 04 local median; the 5 to 30 Hz band ratio does not separate them). Load the result in the training notebook with `DATA_SOURCE = 'AM_traffic'` or append it to the AK set with `EXTRA_SOURCES = ['AM_traffic']`.
-
-Train class (#10): `configs/train_stations.yaml` drives the same collector in `events` mode with the Alaska Railroad timetable (`configs/arr_schedule.yaml` → `scripts/make_train_events.py` → `configs/events/arr_summer_2026.csv`); the collector searches ±15 min around each scheduled passage and keeps the windows whose 5 to 30 Hz rms stands out. AK.K222 (100 m from the Seward line) sees every passage; the AK strong-motion sensors are otherwise too insensitive, and only geophones will do for aircraft (#11), which also needs ADS-B times from an OpenSky account (`scripts/fetch_flights_opensky.py`). Station distances to the track and runways: `docs/station_rail_runway_distances.csv`.
-
-**Regenerating the training sets on another machine.** The waveform files are never committed, but everything needed to rebuild them is: the three configs, the collector, and `datasets/metadata/` with one metadata CSV per station-day (start times, labels, label method, per-window features) plus a `manifest.csv` of what each set holds. From a fresh clone:
-
-```bash
+conda create -n seismic-cnn -c conda-forge python=3.11 fiona obspy pytorch jupyter
+conda activate seismic-cnn
 pip install -r requirements.txt
-python scripts/collect_continuous_windows.py --config configs/am_stations.yaml        # traffic week, 8 stations
-python scripts/collect_continuous_windows.py --config configs/train_stations.yaml     # K222, the passenger season
-python scripts/collect_continuous_windows.py --config configs/aircraft_stations.yaml  # Turnagain, four weeks
-python scripts/export_metadata.py --check    # every set should print "identical" against datasets/metadata/
 ```
 
-The check compares start times and labels window by window; the archives return the same samples, so a pull on another machine reproduces the committed manifest exactly (verified on a clean venv for the Romig sets). `python scripts/export_metadata.py --dirs <dirs>` refreshes `datasets/metadata/` after new pulls.
-
-Stations for the traffic class are listed in `configs/am_stations.yaml`: R1796 and R3130 at Romig Middle School (the partner school) and R4017 for contrast, matched to schools in `docs/am_station_school_matches.csv`. The config also fixes the collection days and label settings, so the whole AM pull is one command that regenerates the same station-days on any machine (file stamps differ; the notebook always picks the newest set per prefix):
+Check the install:
 
 ```bash
-git clone https://github.com/Denolle-Lab/tiny-cnn-seismicML.git && cd tiny-cnn-seismicML
-python -m venv .venv && source .venv/bin/activate      # or a conda env
-pip install -r requirements.txt
-python scripts/collect_continuous_windows.py --config configs/am_stations.yaml
+python -c "from src.models import CompactSeismicCNN; print(CompactSeismicCNN(num_classes=2, input_channels=1).count_parameters())"
 ```
 
-That writes `notebooks/02_labeling/labeled_data/AM_traffic_<date>_*` for each local day in the config, eight stations in seven neighbourhoods over the week of 2026-09-07, daytime Traffic subsampled to 30 % (about 90 s of pulling and 11 MB per station-day; data files are gitignored, never committed). `configs/train_stations.yaml` (K222, the whole passenger season) and `configs/aircraft_stations.yaml` (Turnagain, four weeks) work the same way. The AK earthquake/noise windows are **not** regenerated by these commands: they come from `notebooks/02_labeling/download_AK_only_data.ipynb` (IRIS + ComCat downloads) and must be run once per machine, or copied from a machine that already has `AK_waveforms_*` files. In the notebook:
+The explainer app also needs Node.js 20.19 or newer (see [Deploy](#5-deploy-to-the-browser)).
+
+## Run it
+
+All commands run from the repository root. Waveform files (`*.npy`) are never committed. They are rebuilt from public archives, and `datasets/metadata/` records exactly which windows each set holds.
+
+### 1. Rebuild the training data
+
+```bash
+python scripts/collect_ak_events.py --config configs/ak_events.yaml                 # Earthquake + Noise, ~16 min
+python scripts/collect_continuous_windows.py --config configs/am_stations.yaml        # Traffic week, school Shakes
+python scripts/collect_continuous_windows.py --config configs/train_stations.yaml     # Train, K222 passenger season
+python scripts/collect_continuous_windows.py --config configs/aircraft_stations.yaml  # Aircraft, Turnagain, 4 weeks
+python scripts/export_metadata.py --check   # every set should print "identical" against datasets/metadata/
+```
+
+Output goes to `notebooks/02_labeling/labeled_data/` as `<prefix>_waveforms_<stamp>.npy`, `_labels_`, `_metadata_.csv` and `_summary_.txt`. Add `--max-events 5` to the first command for a quick test. Details of each collector are in [Data collection details](#data-collection-details).
+
+### 2. Train
+
+Open `notebooks/03_training/train_cnn_multiclass.ipynb` and set:
 
 ```python
 DATA_SOURCE = 'ak'
-EXTRA_SOURCES = ["AM_traffic_*"]           # every station-day of the traffic week; add "AK_train_*", "AM_aircraft_*" as they are reviewed
-MODEL_CLASSES_KEY = 'rule_based'   # Noise / Traffic / Earthquake, or 'human_traffic' once train and aircraft exist
+EXTRA_SOURCES = ['AM_traffic_*', 'AK_train_*', 'AM_aircraft_*']
+MODEL_CLASSES_KEY = 'human'       # or 'earthquake', 'rule_based', 'human_traffic', or a list of class names
 ```
 
-### 2. Model Training
-
-Train the CNN using the labeled data:
+Running the notebook end to end band-passes, crops, z-scores and balances the windows, then makes the grouped split (written to `datasets/splits/`). It trains both architectures and saves the checkpoints, `training_summary_*.txt` and the `models/<id>/` packages. A script version for a config file is:
 
 ```bash
-jupyter notebook notebooks/03_training/train_cnn_multiclass.ipynb
+python train.py --config configs/compact_config.yaml --save-dir models
 ```
 
-Or use the command-line script:
+Class subsets (`src/data/labels.py`, `MODEL_CLASSES`):
+
+| Key | Output classes |
+|---|---|
+| `earthquake` | Noise / Earthquake |
+| `["Noise", "Traffic"]` | Noise / Traffic (a list works too) |
+| `rule_based` | Noise / Traffic / Earthquake |
+| `human` | Noise / Train / Aircraft |
+| `human_traffic` | Noise / Traffic / Train / Aircraft |
+| `natural` | Noise / Earthquake / Avalanche (once avalanche data exist) |
+
+### 3. Evaluate on the held-out set
 
 ```bash
-python train.py --save-dir models
+python scripts/run_heldout_inference.py      # every models/<id> on datasets/heldout_inference/
+python scripts/plot_training_curves.py
+python scripts/plot_heldout_examples.py
 ```
 
-The training notebook provides:
-- Train/validation/test split (70/15/15)
-- Per-model class subset (`MODEL_CLASSES_KEY`): drops windows outside the subset and remaps labels to contiguous indices
-- Class-weighted loss for imbalanced data
-- Learning rate scheduling
-- Training and validation loss curves
-- Confusion matrix and per-class metrics
-- Model checkpointing (saves to `models/` directory)
+Results are written to `datasets/heldout_inference/heldout_predictions.csv`, one row per model and window.
 
-### 3. Inference on New Stations
-
-#### Using the Jupyter Notebook (Recommended)
-
-The easiest way to apply the trained model to new seismic stations is using the prediction notebook:
+### 4. Predict on any station and time
 
 ```bash
 jupyter notebook notebooks/04_inference/predict_on_new_station.ipynb
 ```
 
-This notebook allows you to:
-1. **Configure parameters**: Set the target station, time window, and detection thresholds
-2. **Download data**: Automatically fetch data from Raspberry Shake network
-3. **Make predictions**: Run the trained CNN on sliding windows
-4. **Visualize results**: View classification timeline, probability curves, and example detections
-5. **Export results**: Save predictions to CSV for further analysis
-
-**Key configuration parameters:**
-
-```python
-# Station to analyze
-NETWORK = "AM"
-STATION = "RB38A"  # Any Raspberry Shake station
-CHANNEL = "EHZ"
-
-# Time window (use any arbitrary time period)
-START_TIME = "2024-11-27T17:00:00"  # UTC
-END_TIME = "2024-11-27T17:30:00"    # UTC (30 minutes)
-
-# Detection settings
-WINDOW_LENGTH_SEC = 60.0     # Must match training
-WINDOW_OVERLAP = 0.5         # 50% overlap
-CONFIDENCE_THRESHOLD = 0.5   # Minimum confidence for detection
-```
-
-The notebook will:
-- Download seismograms from the specified station and time window
-- Preprocess the data (detrend, demean, taper)
-- Split into overlapping windows
-- Run predictions on each window
-- Generate comprehensive visualizations showing:
-  - Raw waveform
-  - Classification timeline
-  - Earthquake detection probability
-  - All class probabilities over time
-  - Example waveforms from each class
-- Print detection summary with segment identification
-- Optionally export results to CSV
-
-#### Using the Command-Line Script
-
-Alternatively, use the prediction script:
+Set `NETWORK`, `STATION`, `CHANNEL`, `START_TIME` and `END_TIME`. The notebook downloads the data, slides a 60 s window with 50 % overlap, and plots the class probabilities over time. From the command line:
 
 ```bash
-python predict.py --model-path checkpoints/best_model.pth --config configs/standard_config.yaml
+python predict.py --model-path models/<checkpoint>.pth --config configs/standard_config.yaml
 ```
 
-### 4. Examples
+The input must match training: vertical component, 100 Hz, band-pass 2–20 Hz, each 60 s window z-scored.
 
-Additional notebooks are organized by workflow stage in the `notebooks/` directory:
+### 5. Deploy to the browser
+
+A deployable model is a folder `models/<id>/` with `metadata.json` (class names, sampling rate, window length, accuracy) and `weights.json` (TensorFlow.js format). Eleven are in the repo (`compact-v1`…`v6`, `standard-v1`…`v5`). To export a new checkpoint:
 
 ```bash
-# Data exploration
-jupyter notebook notebooks/01_data_exploration/get_am_data.ipynb
-
-# Data labeling
-jupyter notebook notebooks/02_labeling/download_AK_only_data.ipynb
-jupyter notebook notebooks/02_labeling/multi_class_labeling.ipynb
-
-# Model training
-jupyter notebook notebooks/03_training/train_cnn_multiclass.ipynb
-
-# Inference on new data
-jupyter notebook notebooks/04_inference/predict_on_new_station.ipynb
+python scripts/export_compact_weights_for_tfjs.py  --model_path models/seismic_cnn_compact_<stamp>.pth  --output_dir /tmp/export
+python scripts/export_standard_weights_for_tfjs.py --model_path models/seismic_cnn_standard_<stamp>.pth --output_dir /tmp/export
 ```
 
-See `notebooks/README.md` for detailed workflow documentation.
+Then follow [docs/generating-model-weights.md](docs/generating-model-weights.md) to assemble the folder. CLUE loads the folder by URL. To run the CNN explainer locally:
 
-### SeismicCNN (Standard)
-
-The repository includes two CNN architectures optimized for 1D seismic waveforms:
-
-```python
-from src.models import SeismicCNN, CompactSeismicCNN
-
-# Standard model (default)
-model = SeismicCNN(
-    num_classes=3,        # len(class_names) from select_classes, e.g. Noise, Earthquake, Avalanche
-    input_channels=1,     # Single channel (Z component)
-    input_length=6000,    # 60 seconds at 100 Hz
-    dropout_rate=0.3
-)
-
-# Compact model for edge devices
-model_compact = CompactSeismicCNN(
-    num_classes=3,
-    input_channels=1,
-    input_length=6000
-)
+```bash
+python scripts/export_waveforms_for_explainer.py
+python scripts/export_compact_weights_for_tfjs.py
+cd explainer-app && npm install && npm run dev     # http://localhost:5173
 ```
 
-### Architecture Details
+[browser_demo/](browser_demo/) is a plain-HTML demo, and [docs/BROWSER_DEPLOYMENT.md](docs/BROWSER_DEPLOYMENT.md) covers block-coding integration and hosting.
 
-#### SeismicCNN (Standard)
+### 6. Rebuild the report page
 
-- **Input**: 1-channel seismogram (Z component), length 6000 samples (60 seconds at 100 Hz)
-- **Architecture**:
-  - 4 convolutional blocks with batch normalization and max pooling
-  - Global average pooling
-  - 2 fully connected layers
-  - Dropout for regularization
-- **Output**: Class probabilities for the trained labels, usually Noise/Earthquake or Noise/Traffic/Earthquake
-- **Parameters**: ~100,000
-
-### CompactSeismicCNN (Lightweight)
-
-- **Input**: Same as standard model
-- **Architecture**:
-  - 3 convolutional blocks (reduced filters)
-  - Global average pooling
-  - Single fully connected layer
-- **Output**: Class probabilities for the trained labels
-- **Parameters**: ~20,000
-
-## Data Format
-
-The model expects input data in the following format:
-
-- **Shape**: `(batch_size, num_channels, sequence_length)`
-- **Channels**: 1 (Z component of seismogram)
-- **Sequence Length**: 6000 samples (60 seconds at 100 Hz, configurable)
-- **Sampling Rate**: 100 Hz (default)
-- **Window Overlap**: 50% overlap for sliding window predictions
-
-### Preprocessing
-
-The preprocessing pipeline includes:
-
-1. Detrending (linear and demean)
-2. Tapering (5% at edges)
-3. Windowing to fixed length
-4. Normalization (zero mean, unit variance per window)
-
-```python
-from obspy import read
-
-# Read and preprocess seismogram
-stream = read("seismogram.mseed")
-stream.detrend('linear')
-stream.detrend('demean')
-stream.taper(max_percentage=0.05)
-
-# Extract windows
-window_length = 60.0  # seconds
-overlap = 0.5        # 50%
-# ... (see examples for complete windowing code)
+```bash
+python scripts/make_report_page.py    # docs/report.html from scripts/report_template.html + USGS ComCat
 ```
 
-## Project Structure
+## The models
 
-```
-tiny-cnn-seismicML/
-├── src/
-│   ├── models/
-│   │   ├── __init__.py
-│   │   └── cnn.py              # CNN model definitions
-│   ├── data/
-│   │   ├── __init__.py
-│   │   └── preprocessing.py    # Data preprocessing utilities
-│   └── utils/
-│       ├── __init__.py
-│       └── trainer.py          # Training utilities
-├── configs/
-│   ├── standard_config.yaml    # Standard model configuration
-│   └── compact_config.yaml     # Compact model configuration
-├── docs/
-│   ├── BROWSER_DEPLOYMENT.md
-│   └── generating-model-weights.md
-├── explainer-app/              # React + TensorFlow.js CNN explainer
-├── notebooks/
-│   ├── 01_data_exploration/    # Explore seismic data
-│   ├── 02_labeling/            # Create labeled datasets
-│   │   └── labeled_data/       # Generated labeled data (created during labeling)
-│   ├── 03_training/            # Train CNN models
-│   └── 04_inference/           # Deploy models on new data
-│       └── predictions/        # Prediction results (created during inference)
-├── models/
-│   └── compact-v1/             # Example deployable TF.js model package
-├── scripts/
-│   ├── export_compact_weights_for_tfjs.py
-│   ├── export_to_browser.py
-│   └── export_waveforms_for_explainer.py
-├── train.py                    # Command-line training script
-├── predict.py                  # Command-line inference script
-├── requirements.txt            # Dependencies
-└── README.md                   # This file
-```
+Both take `(batch, 1, 6000)`: one vertical channel, 60 s at 100 Hz.
 
-## Notebook Organization
-
-The `notebooks/` directory follows a standard ML workflow:
-
-1. **`01_data_exploration/`** - Explore and understand seismic data
-2. **`02_labeling/`** - Create labeled training datasets from AK downloads or rule-based features
-3. **`03_training/`** - Train CNN models on labeled data
-4. **`04_inference/`** - Apply trained models to continuous seismic data
-
-Each directory contains its own README with detailed documentation. See `notebooks/README.md` for the complete workflow guide.
-
-## Configuration
-
-Training configuration can be customized in YAML files. Key parameters:
-
-```yaml
-model:
-  type: 'standard'           # 'standard' or 'compact'
-  classes: 'earthquake'      # key of src.data.MODEL_CLASSES or a list of class names
-  input_channels: 1          # Vertical component
-  input_length: 6000
-  dropout_rate: 0.3
-
-training:
-  batch_size: 32
-  num_epochs: 50
-  learning_rate: 0.001
-  optimizer: 'adam'          # 'adam', 'adamw', or 'sgd'
-  scheduler: 'step'          # 'step', 'cosine', or 'plateau'
-  early_stopping_patience: 10
-
-data:
-  waveforms: notebooks/02_labeling/labeled_data/AK_waveforms_<stamp>.npy  # optional
-  labels: notebooks/02_labeling/labeled_data/AK_labels_<stamp>.npy        # optional
-  val_split: 0.2
-  use_augmentation: true
-  sampling_rate: 100.0
-  lowcut: 1.0
-  highcut: 45.0
-```
-
-`num_classes` is derived from `classes`. Without `data.waveforms`/`data.labels`, `train.py` trains on dummy data.
-
-## Classes
-
-### Label scheme on disk
-
-Every labeling notebook writes one global integer per window to `*_labels_*.npy`. The scheme lives in one place, `src/data/labels.py` (`LABEL_MAP`), and is append-only: 0, 1 and 2 are already on disk and never change.
-
-| Label | Class | Status |
+| | `CompactSeismicCNN` | `SeismicCNN` |
 |---|---|---|
-| 0 | Noise | on disk (AK and rule-based) |
-| 1 | Traffic | on disk (rule-based Raspberry Shake), port tracked in [#12](https://github.com/Denolle-Lab/tiny-cnn-seismicML/issues/12) |
-| 2 | Earthquake | on disk (AK, P-arrival windows) |
-| 3 | Avalanche | collection tracked in [#9](https://github.com/Denolle-Lab/tiny-cnn-seismicML/issues/9) |
-| 4 | Train | collection tracked in [#10](https://github.com/Denolle-Lab/tiny-cnn-seismicML/issues/10) |
-| 5 | Aircraft | feasibility tracked in [#11](https://github.com/Denolle-Lab/tiny-cnn-seismicML/issues/11) |
-
-### Per-model class subsets
-
-A trained model separates a subset of these classes. `select_classes(X, y, key)` keeps only windows in the subset and remaps their labels to contiguous output indices 0..K-1, so `CrossEntropyLoss`, the checkpoint's `class_names`, and `models/<id>/metadata.json` all agree. Noise is always output index 0. Subsets are named in `MODEL_CLASSES`:
-
-| Key | Output classes | Use |
-|---|---|---|
-| `earthquake` | Noise / Earthquake | deployed today (`models/compact-v2`, `models/standard-v1`) |
-| `natural` | Noise / Earthquake / Avalanche | CLUE WaveRunner "Natural" model |
-| `human` | Noise / Train / Aircraft | CLUE WaveRunner "Human" model |
-| `human_traffic` | Noise / Traffic / Train / Aircraft | Human model with the rule-based traffic class |
-| `rule_based` | Noise / Traffic / Earthquake | earlier three-class Raspberry Shake experiment |
-
-Pick the subset with `MODEL_CLASSES_KEY` in `notebooks/03_training/train_cnn_multiclass.ipynb` or `model.classes` in a config YAML. The roadmap for the Natural and Human models is [#13](https://github.com/Denolle-Lab/tiny-cnn-seismicML/issues/13).
+| Conv blocks | 3 (16, 32, 64 filters; kernels 7, 5, 3) | 4 (32, 64, 128, 128 filters) |
+| Head | global average pool → 1 linear layer | global average pool → 2 linear layers, dropout |
+| Parameters | ~9.4k | ~94k |
+| Held-out accuracy | 92–98 % depending on class subset | 94–98 % |
 
 ```python
-from src.data import select_classes, LABEL_MAP
-
-X, y, class_names = select_classes(X, y, 'natural')
-# class_names == ['Noise', 'Earthquake', 'Avalanche']; y in {0, 1, 2}
+from src.models import CompactSeismicCNN, SeismicCNN
+model = CompactSeismicCNN(num_classes=4, input_channels=1, input_length=6000)
 ```
 
-### Classification Criteria
+Deployed models in `models/` (test = grouped test split, held-out = `datasets/heldout_inference/`; full details on [the model page](docs/index_draft.html)):
 
-The model is trained on features including:
-- **STA/LTA ratios**: Short-term to long-term amplitude ratios
-- **Kurtosis**: Signal sharpness and impulsiveness
-- **Spectral energy**: Energy distribution across frequency bands (0-5 Hz, 5-15 Hz, 15-30 Hz)
-- **Dominant frequency**: Peak frequency content
-- **Envelope characteristics**: Signal amplitude envelope properties
+| Classes | Compact | Standard |
+|---|---|---|
+| Noise / Earthquake | `compact-v5`: 99.2 % test, 97.5 % held-out | `standard-v4`: 98.9 % test, 97.5 % held-out |
+| Noise / Traffic | `compact-v6`: 95.9 % test, 95.0 % held-out | `standard-v5`: 97.4 % test, 94.0 % held-out |
+| Noise / Traffic / Earthquake | `compact-v3`: 94.5 % test, 95.3 % held-out | `standard-v2`: 96.0 % test, 95.7 % held-out |
+| Noise / Traffic / Train / Aircraft | `compact-v4`: 94.3 % test, 92.5 % held-out | `standard-v3`: 96.1 % test, 95.1 % held-out |
+| Noise / Earthquake, July 2026 (earlier split) | `compact-v2`, `compact-v1` | `standard-v1` |
 
-## Dependencies
+Each conv block is convolution → batch norm → ReLU → max-pool. A last-layer feature sees about 0.45 s of signal (compact model), and the global average pool reports how much of each learned pattern occurs in the minute. [docs/report.html](docs/report.html#cnn) explains this step by step.
 
-See `requirements.txt` for a complete list of dependencies. Key packages include:
+## Limitations
 
-- **PyTorch** >= 2.0.0: Deep learning framework
-- **NumPy** >= 1.24.0: Numerical computing
-- **SciPy** >= 1.10.0: Scientific computing and signal processing
-- **ObsPy** >= 1.4.0: Seismological data handling
-- **scikit-learn** >= 1.3.0: Machine learning utilities
-- **Matplotlib** >= 3.7.0: Visualization
-- **Seaborn** >= 0.12.0: Statistical visualization
-- **pandas** >= 2.0.0: Data manipulation
+- **Weak labels.** Labels come from rules (time of day, timetable, catalog), so some windows are mislabeled. Use the review site to flag them.
+- **One site per class.** Trains come only from K222, aircraft only from Turnagain, and earthquakes only from AK broadbands. A model may partly learn the sensor or the site. The held-out set uses the same stations, so it cannot rule this out.
+- **No amplitude, short memory.** Per-window z-scoring removes loudness, and global pooling removes timing within the window.
+- **Closed set.** Every window is forced into one known class. There is no "unknown" output and no handling of mixed windows.
+- **Limited coverage.** M ≥ 3 only, one week of traffic in September, no winter data, no avalanches yet. Held-out Train windows come from a test split, not from new days.
 
-## License
+## Repository layout
 
-See LICENSE file for details.
+```
+src/            models (cnn.py), labels and class subsets, collectors (data/collect.py), training utilities
+scripts/        collectors, export, held-out inference, plotting, report and review-site builders
+configs/        collection configs (ak_events, am/train/aircraft_stations, arr_schedule) and training configs
+datasets/       committed metadata: per-set window lists, split manifests, held-out set and predictions
+models/         deployable models/<id>/ folders and training summaries
+notebooks/      01_data_exploration, 02_labeling, 03_training, 04_inference
+docs/           GitHub Pages site, figures, station tables, deployment guides
+explainer-app/  React + TensorFlow.js CNN explainer
+browser_demo/   minimal browser classifier
+```
+
+See [ORGANIZATION.md](ORGANIZATION.md) and [notebooks/README.md](notebooks/README.md) for more.
+
+## Data collection details
+
+**Earthquakes** (`scripts/collect_ak_events.py`, `configs/ak_events.yaml`). The collector queries USGS for M 3–7 events within 150 km of Anchorage (2020-01-01 to 2025-12-01) and takes the reviewed P picks from ComCat (`usgs-libcomcat`). It downloads vertical broadband data from IRIS and cuts a 120 s earthquake window (P at 30 s) plus a 60 s pre-event noise window per station, band-passed 2–20 Hz at 100 Hz. The 98 noise windows rejected by eye in July 2026 are dropped (`docs/ak_dropped_windows.csv`). Command-line flags override the config. `--zscore` reproduces the July 2026 `AK_*` files byte for byte.
+
+**Continuous classes** (`scripts/collect_continuous_windows.py`). This collector writes 60 s / 100 Hz windows in the same layout with a provisional label, per-window features and blank `reviewed` / `review_label` columns. `--review-sheet N` adds a PNG grid and a CSV for review by eye. Label modes:
+
+- `--label-from timeofday`: daytime = Traffic, 01–05 local = Noise. A station-day is kept only if its daytime 5–30 Hz level is at least 2× its night level.
+- `--label-from events --events file.csv`: windows around listed times. The Train set uses the Alaska Railroad timetable (`configs/arr_schedule.yaml` → `scripts/make_train_events.py` → `configs/events/arr_summer_2026.csv`), searched ±15 min and kept where the 5–30 Hz rms stands out.
+- `--label-from rule`: rms threshold against a quiet reference. The Aircraft set uses this with a 20–45 Hz band on both Turnagain Shakes.
+
+```bash
+python scripts/collect_continuous_windows.py --network AM --station R4017 \
+    --start 2026-09-09 --end 2026-09-10 --class-name Traffic --label-from timeofday --review-sheet 24
+```
+
+Station-to-school matches are in `docs/am_station_school_matches.csv` and distances to the railroad and runways in `docs/station_rail_runway_distances.csv`. ADS-B flight times for aircraft can be fetched with `scripts/fetch_flights_opensky.py` (needs an OpenSky account). The shared FDSN client, preprocessing chain and file layout live in `src/data/collect.py`, which imports without torch.
+
+**Label scheme.** `src/data/labels.py` (`LABEL_MAP`) is append-only: integers on disk never change. `select_classes(X, y, key)` keeps one subset and remaps it to outputs 0…K−1, with Noise always at 0.
 
 ## Citation
 
-If you use this code in your research, please cite:
-
-```
+```bibtex
 @software{tiny-cnn-seismicML,
-  title={tiny-cnn-seismicML: Lightweight CNN for Seismic Signal Classification},
-  author={Denolle Lab},
-  year={2025},
-  url={https://github.com/Denolle-Lab/tiny-cnn-seismicML}
+  title  = {tiny-cnn-seismicML: Lightweight CNNs for Seismic Signal Classification in Anchorage},
+  author = {Denolle Lab},
+  year   = {2026},
+  url    = {https://github.com/Denolle-Lab/tiny-cnn-seismicML}
 }
 ```
 
-## Contributing
+## License and contact
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## Contact
-
-For questions and issues, please open an issue on GitHub.
+See [LICENSE](LICENSE). Questions and contributions: open an issue or a pull request on GitHub.
