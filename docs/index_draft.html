@@ -8,11 +8,11 @@
 <style>
   :root { --paper:#F4F6F4; --ink:#1B2229; --muted:#5A6670; --rule:#D3DAD6; --panel:#EBEFEC;
     --noise:#2b6ca3; --traffic:#d9822b; --earthquake:#b0413e; --train:#7b3f9e; --aircraft:#2a857a;
-    --bad:#f6dcd7; --bad-ink:#8a2a1f; color-scheme:light; }
+    color-scheme:light; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --paper:#141A1E; --ink:#E6EAE7; --muted:#97A3A9; --rule:#2C353B; --panel:#1C2429;
-    --noise:#6fa8dc; --traffic:#e9a15c; --earthquake:#e0736d; --train:#b48ad6; --aircraft:#5cbdb0; --bad:#4a2420; --bad-ink:#f3b3a8; color-scheme:dark; } }
+    --noise:#6fa8dc; --traffic:#e9a15c; --earthquake:#e0736d; --train:#b48ad6; --aircraft:#5cbdb0; color-scheme:dark; } }
   :root[data-theme="dark"] { --paper:#141A1E; --ink:#E6EAE7; --muted:#97A3A9; --rule:#2C353B; --panel:#1C2429;
-    --noise:#6fa8dc; --traffic:#e9a15c; --earthquake:#e0736d; --train:#b48ad6; --aircraft:#5cbdb0; --bad:#4a2420; --bad-ink:#f3b3a8; color-scheme:dark; }
+    --noise:#6fa8dc; --traffic:#e9a15c; --earthquake:#e0736d; --train:#b48ad6; --aircraft:#5cbdb0; color-scheme:dark; }
   body { margin:0; background:var(--paper); color:var(--ink); font-family:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif; font-size:15.5px; line-height:1.55; padding-block:40px 70px; padding-inline:20px; }
   main { max-width:900px; margin:0 auto; }
   h1 { font-family:"Archivo","Helvetica Neue",Arial,sans-serif; font-stretch:87.5%; font-size:34px; margin:6px 0 4px; line-height:1.1; }
@@ -57,17 +57,6 @@
   .gallery { display:grid; gap:18px; margin:10px 0 18px; }
   figure img { width:100%; height:auto; background:#fff; border:1px solid var(--rule); border-radius:2px; }
   figcaption { font-size:13px; color:var(--muted); margin-top:4px; }
-  table.inf { font-size:12.5px; min-width:980px; }
-  table.inf th.mh { writing-mode:initial; text-transform:none; letter-spacing:0; font-size:12px; }
-  td.pred { white-space:nowrap; }
-  td.pred .conf { color:var(--muted); margin-left:5px; font-size:11.5px; }
-  td.pred.bad { background:var(--bad); color:var(--bad-ink); font-weight:500; }
-  td.pred.bad .conf { color:var(--bad-ink); }
-  td.pred.oos { color:var(--muted); font-style:italic; }
-  tr.score td { border-bottom:2px solid var(--ink); }
-  .flag { display:inline-block; width:15px; height:15px; line-height:15px; text-align:center; border-radius:50%; background:var(--bad); color:var(--bad-ink); font-size:11px; font-weight:500; cursor:help; }
-  .legend { display:flex; flex-wrap:wrap; gap:6px 18px; font-size:13px; color:var(--muted); margin:6px 0; }
-  .legend span.box { display:inline-block; width:22px; height:12px; vertical-align:-1px; margin-right:6px; border:1px solid var(--rule); }
   footer { margin-top:44px; padding-top:14px; border-top:1px solid var(--rule); font-size:12.5px; color:var(--muted); }
   @media (max-width:560px) { dl { grid-template-columns:1fr; } h1 { font-size:28px; } }
   .ci { color:var(--muted); font-size:11.5px; }
