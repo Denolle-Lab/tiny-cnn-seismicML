@@ -14,6 +14,7 @@ Usage (from repo root, needs network):
 import glob
 import io
 import json
+from datetime import date
 from pathlib import Path
 from urllib.request import urlopen
 
@@ -49,6 +50,7 @@ def main():
     events = [[r.id, r.time[:16], round(r.mag, 1), round(r.latitude, 3), round(r.longitude, 3),
                round(r.depth, 1), r.place, r.set] for r in cat.itertuples()]
     html = TEMPLATE.read_text().replace("__EVENTS__", json.dumps(events, separators=(",", ":")))
+    html = html.replace("__FETCHED__", date.today().isoformat())
     OUT.write_text(html)
     print(f"wrote {OUT.relative_to(REPO_ROOT)}: {len(events)} events "
           f"({(cat.set == 'train').sum()} training, {(cat.set == 'heldout').sum()} held-out)")
