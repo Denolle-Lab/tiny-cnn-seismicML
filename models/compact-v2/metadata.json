@@ -5,6 +5,6 @@
   "class_names": ["Noise", "Earthquake"],
   "sampling_rate": 100,
   "window_duration": 60,
-  "instrument_types": ["B"],
+  "instrument_types": ["H"],
   "weightsUrl": "./weights.json"
 }

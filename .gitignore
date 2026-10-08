@@ -72,5 +72,8 @@ Thumbs.db
 !docs/*.csv
 
 # Dataset manifests: per-window metadata (times, labels, features), never waveforms
+# (the Raspberry Shake terms forbid redistributing them)
 !datasets/
 !datasets/**
+datasets/**/*.npy
+datasets/**/*.npz
