@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anchorage Seismic Report</title>
+<meta name="description" content="What tiny-cnn-seismicML studies: the datasets, a map of Anchorage stations, schools and earthquakes, a catalog of signal types, how the CNN classifies a window, and what is still limited.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@87.5,500;87.5,700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<style>
+  :root { --paper:#F4F6F4; --ink:#1B2229; --muted:#5A6670; --rule:#D3DAD6; --panel:#EBEFEC;
+    --noise:#2b6ca3; --traffic:#d9822b; --earthquake:#b0413e; --train:#7b3f9e; --aircraft:#2a857a; --avalanche:#8a8f2a;
+    --heldout:#1B2229; color-scheme:light; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --paper:#141A1E; --ink:#E6EAE7; --muted:#97A3A9; --rule:#2C353B; --panel:#1C2429;
+    --noise:#6fa8dc; --traffic:#e9a15c; --earthquake:#e0736d; --train:#b48ad6; --aircraft:#5cbdb0; --avalanche:#c4c76a; --heldout:#E6EAE7; color-scheme:dark; } }
+  :root[data-theme="dark"] { --paper:#141A1E; --ink:#E6EAE7; --muted:#97A3A9; --rule:#2C353B; --panel:#1C2429;
+    --noise:#6fa8dc; --traffic:#e9a15c; --earthquake:#e0736d; --train:#b48ad6; --aircraft:#5cbdb0; --avalanche:#c4c76a; --heldout:#E6EAE7; color-scheme:dark; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif; font-size:15.5px; line-height:1.55; padding:40px 16px 70px; }
+  main { max-width:960px; margin:0 auto; }
+  h1 { font-family:"Archivo","Helvetica Neue",Arial,sans-serif; font-stretch:87.5%; font-size:34px; margin:6px 0 6px; line-height:1.1; }
+  h2 { font-family:"Archivo","Helvetica Neue",Arial,sans-serif; font-stretch:87.5%; font-size:23px; margin:48px 0 10px; padding-top:14px; border-top:2px solid var(--ink); }
+  h3 { font-family:"Archivo",sans-serif; font-stretch:87.5%; font-size:18px; margin:0 0 6px; }
+  .eyebrow, th { font-family:"IBM Plex Mono",Menlo,monospace; font-size:11.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); font-weight:500; }
+  .lede { color:var(--muted); max-width:66ch; margin:0 0 8px; }
+  p, li { max-width:70ch; }
+  p { margin:0 0 12px; }
+  a { color:var(--train); }
+  code { font-family:"IBM Plex Mono",Menlo,monospace; font-size:13px; }
+  nav.toc { display:flex; flex-wrap:wrap; gap:6px 18px; margin:18px 0 0; font-size:14px; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:22px 0 4px; }
+  .tile { border:1px solid var(--rule); background:var(--panel); border-radius:4px; padding:12px 14px; }
+  .tile b { display:block; font-family:"Archivo",sans-serif; font-stretch:87.5%; font-size:28px; line-height:1.1; font-variant-numeric:tabular-nums; }
+  .tile span { color:var(--muted); font-size:13px; }
+  .scroll { overflow-x:auto; margin:6px 0 14px; }
+  table { border-collapse:collapse; width:100%; font-size:14px; font-variant-numeric:tabular-nums; }
+  th, td { text-align:left; vertical-align:top; padding:7px 10px 7px 0; border-bottom:1px solid var(--rule); }
+  td.num, th.num { text-align:right; }
+  .sw { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:6px; vertical-align:-1px; }
+  .noise{background:var(--noise)} .traffic{background:var(--traffic)} .earthquake{background:var(--earthquake)} .train{background:var(--train)} .aircraft{background:var(--aircraft)} .avalanche{background:var(--avalanche)}
+  .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px; margin:12px 0; }
+  .card { border:1px solid var(--rule); border-radius:4px; background:var(--panel); padding:16px; }
+  .card h3 { display:flex; align-items:center; gap:2px; }
+  .card dl { display:grid; grid-template-columns:86px 1fr; gap:4px 10px; margin:8px 0 0; font-size:14px; }
+  .card dt { color:var(--muted); font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.06em; text-transform:uppercase; padding-top:3px; }
+  .card dd { margin:0; }
+  .card.planned { border-style:dashed; background:transparent; }
+  figure { margin:14px 0; }
+  figure img { width:100%; height:auto; background:#fff; border:1px solid var(--rule); border-radius:2px; }
+  figcaption { font-size:13px; color:var(--muted); margin-top:4px; max-width:80ch; }
+  #map { height:540px; border:1px solid var(--rule); border-radius:4px; background:var(--panel); }
+  @media (max-width:600px) { #map { height:420px; } }
+  .btns { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
+  button, select, input[type=search] { font:inherit; font-size:14px; color:var(--ink); background:var(--panel); border:1px solid var(--rule); border-radius:4px; padding:5px 11px; }
+  button[aria-pressed="true"] { border-color:var(--ink); background:var(--paper); font-weight:500; }
+  button:hover { border-color:var(--ink); }
+  .legend { display:flex; flex-wrap:wrap; gap:6px 16px; font-size:13px; color:var(--muted); margin:8px 0 0; }
+  .legend i { display:inline-block; vertical-align:-1px; margin-right:5px; }
+  .tri { width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-bottom:11px solid currentColor; }
+  .dot { width:10px; height:10px; border-radius:50%; border:1.5px solid var(--earthquake); }
+  .dot.f { background:var(--earthquake); opacity:.6; }
+  .dot.h { border-color:var(--heldout); }
+  .sq { width:10px; height:10px; background:var(--ink); border-radius:2px; }
+  .leaflet-container { font-family:inherit; }
+  .tiles-dark { filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9); }
+  .leaflet-popup-content { font-size:13.5px; line-height:1.45; }
+  .charts { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin:12px 0; }
+  .chart h4 { margin:0 0 4px; font-size:14px; font-weight:500; }
+  .chart svg { width:100%; height:auto; display:block; }
+  .chart text { fill:var(--muted); font-size:10px; font-family:"IBM Plex Mono",monospace; }
+  .controls { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:12px 0 6px; }
+  #evcount { color:var(--muted); font-size:13px; }
+  .tbl-wrap { max-height:420px; overflow:auto; border:1px solid var(--rule); border-radius:4px; }
+  .tbl-wrap th { position:sticky; top:0; background:var(--paper); cursor:pointer; padding-left:8px; }
+  .tbl-wrap td { padding-left:8px; }
+  .tag { font-family:"IBM Plex Mono",monospace; font-size:11px; padding:1px 6px; border-radius:3px; border:1px solid var(--rule); }
+  .diagram svg { width:100%; height:auto; display:block; }
+  .diagram text { font-family:"IBM Plex Mono",monospace; font-size:11px; fill:var(--ink); }
+  .diagram .m { fill:var(--muted); }
+  .diagram .box { fill:var(--panel); stroke:var(--rule); }
+  .diagram .hl { stroke:var(--earthquake); }
+  .diagram .ln { stroke:var(--muted); fill:none; }
+  ol.steps { padding-left:22px; display:grid; gap:8px; }
+  .cm { border-collapse:separate; border-spacing:2px; width:auto; font-size:13px; }
+  .cm td, .cm th { border:none; padding:6px 8px; text-align:center; }
+  .cm th { text-transform:none; letter-spacing:0; font-size:12px; }
+  .cm td.lab { text-align:right; color:var(--muted); font-family:"IBM Plex Mono",monospace; font-size:12px; }
+  .lim { display:grid; gap:12px; }
+  .lim article { border-left:3px solid var(--earthquake); padding:2px 0 2px 14px; }
+  .lim h3 { font-size:16.5px; }
+  footer { margin-top:56px; padding-top:14px; border-top:1px solid var(--rule); color:var(--muted); font-size:13px; }
+</style>
+</head>
+<body>
+<main>
+<p class="eyebrow">Denolle Lab · University of Washington · SeismicML with Concord Consortium</p>
+<h1>What shakes the ground in Anchorage?</h1>
+<p class="lede">We train small convolutional neural networks (CNNs) to sort 60 seconds of vertical ground motion into earthquake, traffic, train, aircraft or quiet background. They are small enough to run in a middle-school browser. The data come from public seismometers around Anchorage, including two Raspberry Shakes at Romig Middle School.</p>
+<p class="lede">This page covers the data, a map, a catalog of the signals and earthquakes, how the network makes a prediction, and what it still gets wrong. Per-model scores are on the <a href="index_draft.html">model page</a>.</p>
+<nav class="toc" aria-label="Sections">
+  <a href="#datasets">Datasets</a><a href="#map-sec">Map</a><a href="#signals">Signal catalog</a><a href="#quakes">Earthquake catalog</a><a href="#cnn">How the CNN works</a><a href="#limits">Limitations</a>
+</nav>
+
+<div class="tiles">
+  <div class="tile"><b>5</b><span>signal classes trained (avalanche planned)</span></div>
+  <div class="tile"><b>12</b><span>stations: 4 AK network, 8 Raspberry Shake</span></div>
+  <div class="tile"><b>477</b><span>catalog earthquakes in training, M 3.0–6.0</span></div>
+  <div class="tile"><b>485</b><span>held-out windows no model trained on</span></div>
+  <div class="tile"><b>9.4k</b><span>parameters in the compact CNN</span></div>
+</div>
+
+<h2 id="datasets">Datasets</h2>
+<p>We built four training sets, one per signal source. Each set has its own <em>Noise</em> windows, recorded at quiet hours or just before an earthquake. Every window is 60 s of the vertical component at 100 samples per second, so the model always gets 6,000 numbers. No window was labelled by hand. Each label comes from a rule that can be rerun, such as a catalog time, a train timetable or the hour of day.</p>
+<div class="scroll"><table>
+  <tr><th>Set</th><th>Stations</th><th>Sensor</th><th>Period</th><th>Label rule</th><th class="num">Signal windows</th><th class="num">Noise windows</th></tr>
+  <tr><td><span class="sw earthquake"></span>Earthquake</td><td>AK.FIRE, AK.RC01, AK.SSN</td><td>broadband seismometer</td><td>2020-06 to 2025-11</td><td>USGS ComCat event M 3–7 within 150 km; window cut at the reviewed P pick</td><td class="num">1,024</td><td class="num">926</td></tr>
+  <tr><td><span class="sw traffic"></span>Traffic</td><td>6 Shakes at schools incl. Romig (R1796, R3130)</td><td>Raspberry Shake geophone</td><td>week of 2026-09-07</td><td>07–19 local = Traffic, 01–05 local = Noise; loud night passes = Traffic</td><td class="num">7,663</td><td class="num">7,914</td></tr>
+  <tr><td><span class="sw train"></span>Train</td><td>AK.K222, Potter Marsh</td><td>strong-motion accelerometer</td><td>2026-05-15 to 09-13</td><td>Alaska Railroad timetable ±15 min, then an energy threshold</td><td class="num">734</td><td class="num">8,848</td></tr>
+  <tr><td><span class="sw aircraft"></span>Aircraft</td><td>AM.RFD97, AM.R9286, Turnagain</td><td>Raspberry Shake geophone</td><td>2026-08-17 to 09-13</td><td>20–45 Hz burst seen on both stations at once, 3 km from runway 15/33</td><td class="num">979</td><td class="num">3,429</td></tr>
+</table></div>
+<p>Before training, the Noise class is capped at 150 windows per station, so that K222's 8,848 quiet windows do not swamp the other classes. Training, validation and test sets are split by earthquake or by station-day, so two windows from one event never land on both sides. The <strong>held-out set</strong> has 485 more windows (about 100 per class) recorded after every training date, at the same stations.</p>
+<figure>
+  <img src="figures/label_examples.png" alt="Five example windows per class with their spectrograms" loading="lazy">
+  <figcaption>Five training windows per class, each 60 s of filtered counts with its spectrogram below. Earthquakes start with a sharp P arrival. Traffic is continuous 5–30 Hz energy. A train is a long, slowly rising and falling rumble. Aircraft add energy above 20 Hz.</figcaption>
+</figure>
+
+<h2 id="map-sec">Map: Romig Middle School, stations and earthquakes</h2>
+<p>Use the buttons to switch between the city, where the traffic, train and aircraft stations are, and the region, where the earthquakes are. Click any symbol for details. Raspberry Shake positions are rounded by the network for the hosts' privacy and are only good to about 1 km. The Romig marker is placed by hand next to its station and is approximate.</p>
+<div class="btns" role="group" aria-label="Map extent">
+  <button id="v-city" aria-pressed="true">Anchorage</button>
+  <button id="v-region" aria-pressed="false">Region (earthquakes)</button>
+</div>
+<div id="map" role="region" aria-label="Map of Anchorage stations, schools and earthquakes"></div>
+<div class="legend">
+  <span><i class="tri" style="color:var(--earthquake)"></i>broadband (earthquake set)</span>
+  <span><i class="tri" style="color:var(--traffic)"></i>traffic Shake</span>
+  <span><i class="tri" style="color:var(--train)"></i>train station K222</span>
+  <span><i class="tri" style="color:var(--aircraft)"></i>aircraft Shake</span>
+  <span><i class="sq"></i>school / airport</span>
+  <span><i class="dot f"></i>training earthquake (size = magnitude)</span>
+  <span><i class="dot h"></i>held-out earthquake</span>
+</div>
+
+<h2 id="signals">Signal catalog</h2>
+<p>Each class is a different physical source. Sources differ in <em>how long</em> they last, <em>which frequencies</em> they carry, and <em>how they start</em>. Those are the features the CNN learns to pick up.</p>
+<div class="grid2">
+  <article class="card"><h3><span class="sw earthquake"></span>Earthquake</h3>
+    <p>A fault slips somewhere in south-central Alaska, most often 30–70 km down in the subducting Pacific plate. The P wave arrives first as a sharp onset. The S wave and a long coda follow over tens of seconds.</p>
+    <dl><dt>Duration</dt><dd>10–90 s, sharp start then slow decay</dd><dt>Frequency</dt><dd>1–15 Hz, lower for bigger or farther quakes</dd><dt>Label</dt><dd>USGS ComCat catalog with reviewed P picks</dd></dl></article>
+  <article class="card"><h3><span class="sw traffic"></span>Traffic</h3>
+    <p>Cars, trucks and buses on streets near the school. Each vehicle passing adds a few seconds of shaking. In the daytime these overlap into a steady hum that stops at night.</p>
+    <dl><dt>Duration</dt><dd>continuous in the daytime; 2–10 s per vehicle</dd><dt>Frequency</dt><dd>5–30 Hz</dd><dt>Label</dt><dd>time of day, plus loud single night passes</dd></dl></article>
+  <article class="card"><h3><span class="sw train"></span>Train</h3>
+    <p>Alaska Railroad trains on the Seward line, 100 m from station K222 at Potter Marsh. A train is heard for a minute or more and grows and fades as it passes.</p>
+    <dl><dt>Duration</dt><dd>1–3 min, symmetric build-up and fade</dd><dt>Frequency</dt><dd>2–20 Hz, with a strong low-frequency part</dd><dt>Label</dt><dd>passenger timetable ± 15 min, energy threshold</dd></dl></article>
+  <article class="card"><h3><span class="sw aircraft"></span>Aircraft</h3>
+    <p>Jets landing on or taking off from runway 15/33 at Ted Stevens Anchorage International. Engine sound couples into the ground, so the Shakes in Turnagain pick it up.</p>
+    <dl><dt>Duration</dt><dd>15–60 s</dd><dt>Frequency</dt><dd>20–45 Hz, above most other sources</dd><dt>Label</dt><dd>high-frequency burst on both Turnagain Shakes at once</dd></dl></article>
+  <article class="card"><h3><span class="sw noise"></span>Noise</h3>
+    <p>Everything else: wind, ocean microseism, furnaces, footsteps, the instrument itself. It differs a lot between sites. A quiet K222 window is about 2 counts rms, while a Romig window is about 200.</p>
+    <dl><dt>Duration</dt><dd>always present</dd><dt>Frequency</dt><dd>broad; site-dependent</dd><dt>Label</dt><dd>01–05 local time, or 30–90 s before a P wave</dd></dl></article>
+  <article class="card planned"><h3><span class="sw avalanche"></span>Avalanche <span class="tag" style="margin-left:8px">planned</span></h3>
+    <p>Snow avalanches in the Chugach make emergent, cigar-shaped signals that last tens of seconds. We have not collected these yet; see <a href="https://github.com/Denolle-Lab/tiny-cnn-seismicML/issues/9">issue #9</a>.</p>
+    <dl><dt>Duration</dt><dd>20–120 s, slow start</dd><dt>Frequency</dt><dd>1–10 Hz</dd><dt>Label</dt><dd>not yet</dd></dl></article>
+</div>
+<figure>
+  <img src="figures/report_class_gallery.png" alt="Gallery of example windows for each signal class" loading="lazy">
+  <figcaption>Example windows of each class from the label verification report.</figcaption>
+</figure>
+
+<h2 id="quakes">Earthquake catalog</h2>
+<p>These are the <span id="nq"></span> USGS catalog earthquakes behind the Earthquake class. <span id="ntr"></span> of them (2020–2025) are used in training and <span id="nho"></span> (2026) only in the held-out test. Most are small and deep, under the Cook Inlet and the Susitna basin, where the Pacific plate dives beneath Alaska. Each event appears at up to three broadband stations.</p>
+<div class="charts">
+  <div class="chart"><h4>Magnitude</h4><svg id="h-mag" viewBox="0 0 300 140" role="img" aria-label="Histogram of magnitudes"></svg></div>
+  <div class="chart"><h4>Depth (km)</h4><svg id="h-dep" viewBox="0 0 300 140" role="img" aria-label="Histogram of depths"></svg></div>
+  <div class="chart"><h4>Events per year</h4><svg id="h-yr" viewBox="0 0 300 140" role="img" aria-label="Events per year"></svg></div>
+</div>
+<div class="controls">
+  <select id="f-set" aria-label="Filter by set"><option value="">All events</option><option value="train">Training only</option><option value="heldout">Held-out only</option></select>
+  <select id="f-mag" aria-label="Minimum magnitude"><option value="0">Any magnitude</option><option value="3.5">M ≥ 3.5</option><option value="4">M ≥ 4.0</option><option value="4.5">M ≥ 4.5</option></select>
+  <input type="search" id="f-q" placeholder="Search place…" aria-label="Search place">
+  <span id="evcount"></span>
+</div>
+<div class="tbl-wrap"><table id="evtbl">
+  <thead><tr><th data-k="1">Time (UTC)</th><th data-k="2" class="num">M</th><th data-k="5" class="num">Depth km</th><th data-k="6">Place</th><th data-k="7">Set</th><th>USGS</th></tr></thead>
+  <tbody></tbody>
+</table></div>
+<p class="eyebrow" style="margin-top:6px">Click a column header to sort · source: USGS ComCat</p>
+
+<h2 id="cnn">How the CNN predicts a class</h2>
+<p>A convolutional neural network learns a set of short pattern detectors called <em>filters</em> and slides each one along the waveform. Each filter outputs a high value wherever the waveform looks like its pattern. Stacking several layers lets later filters combine simple patterns, such as a sharp jump or a 25 Hz wiggle, into more specific ones, such as "a sharp jump followed by growing wiggles". At the end, the network adds up the evidence and gives one probability per class.</p>
+<div class="diagram card" style="padding:12px">
+<svg viewBox="0 0 920 230" role="img" aria-label="Compact CNN: waveform through three convolution layers to class probabilities">
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor" style="color:var(--muted)"/></marker></defs>
+  <rect class="box" x="6" y="40" width="150" height="110" rx="4"/>
+  <polyline class="ln" style="stroke:var(--earthquake)" points="14,95 30,95 36,94 40,96 46,95 50,93 54,97 58,95 62,95 66,70 68,122 71,78 74,112 77,82 80,107 84,87 88,103 93,90 98,100 104,92 110,98 117,94 125,97 133,95 148,95"/>
+  <text x="14" y="30">input</text><text x="14" y="168" class="m">1 × 6,000 samples</text><text x="14" y="183" class="m">60 s, z-scored</text>
+  <line class="ln" x1="160" y1="95" x2="192" y2="95" marker-end="url(#ar)"/>
+  <g transform="translate(196,0)">
+    <rect class="box" x="0" y="50" width="120" height="90" rx="4"/><rect class="box" x="6" y="44" width="120" height="90" rx="4"/><rect class="box hl" x="12" y="38" width="120" height="90" rx="4"/>
+    <text x="0" y="30">conv 1</text><text x="20" y="80">16 filters</text><text x="20" y="96" class="m">7 samples</text><text x="0" y="168" class="m">16 × 1,500</text><text x="0" y="183" class="m">after stride + pool</text>
+  </g>
+  <line class="ln" x1="336" y1="95" x2="368" y2="95" marker-end="url(#ar)"/>
+  <g transform="translate(372,0)">
+    <rect class="box" x="0" y="50" width="110" height="90" rx="4"/><rect class="box" x="6" y="44" width="110" height="90" rx="4"/><rect class="box hl" x="12" y="38" width="110" height="90" rx="4"/>
+    <text x="0" y="30">conv 2</text><text x="20" y="80">32 filters</text><text x="20" y="96" class="m">5 wide</text><text x="0" y="168" class="m">32 × 750</text>
+  </g>
+  <line class="ln" x1="502" y1="95" x2="534" y2="95" marker-end="url(#ar)"/>
+  <g transform="translate(538,0)">
+    <rect class="box" x="0" y="50" width="100" height="90" rx="4"/><rect class="box" x="6" y="44" width="100" height="90" rx="4"/><rect class="box hl" x="12" y="38" width="100" height="90" rx="4"/>
+    <text x="0" y="30">conv 3</text><text x="20" y="80">64 filters</text><text x="20" y="96" class="m">3 wide</text><text x="0" y="168" class="m">64 × 750</text>
+  </g>
+  <line class="ln" x1="656" y1="95" x2="688" y2="95" marker-end="url(#ar)"/>
+  <g transform="translate(692,0)">
+    <rect class="box" x="0" y="40" width="26" height="110" rx="3"/>
+    <text x="-6" y="30">average</text><text x="-6" y="168" class="m">64 numbers</text>
+  </g>
+  <line class="ln" x1="722" y1="95" x2="754" y2="95" marker-end="url(#ar)"/>
+  <g transform="translate(760,0)">
+    <text x="0" y="30">softmax</text>
+    <rect x="0" y="48" width="18" height="18" style="fill:var(--noise)"/><rect x="24" y="52" width="20" height="10" style="fill:var(--noise)" opacity=".35"/><text x="50" y="61">Noise 0.04</text>
+    <rect x="0" y="74" width="18" height="18" style="fill:var(--traffic)"/><rect x="24" y="78" width="12" height="10" style="fill:var(--traffic)" opacity=".35"/><text x="50" y="87">Traffic 0.02</text>
+    <rect x="0" y="100" width="18" height="18" style="fill:var(--earthquake)"/><rect x="24" y="104" width="100" height="10" style="fill:var(--earthquake)"/><text x="50" y="113" style="font-weight:500">Quake 0.94</text>
+    <text x="0" y="168" class="m">one probability</text><text x="0" y="183" class="m">per class, sum = 1</text>
+  </g>
+</svg>
+</div>
+<ol class="steps">
+  <li><strong>Normalize.</strong> The 6,000-sample window is band-passed (2–20 Hz) and scaled to zero mean and unit standard deviation. The network sees the <em>shape</em> of the shaking, not how loud it is.</li>
+  <li><strong>Convolve.</strong> Layer 1 slides 16 filters, each 7 samples (0.07 s) long, along the trace. Each filter responds to one short shape. Max-pooling keeps the strongest response in each pair of neighbouring samples, so the trace gets shorter.</li>
+  <li><strong>Combine.</strong> Layers 2 and 3 (32 and 64 filters) work on the outputs of the layer below. One layer-3 feature looks at 45 input samples, about 0.45 s of ground motion, and can recognise a pattern such as "impulsive onset" or "high-frequency buzz".</li>
+  <li><strong>Average.</strong> Global average pooling turns each of the 64 feature maps into one number: how much of that pattern the 60 s window contains.</li>
+  <li><strong>Decide.</strong> A final linear layer weighs those 64 numbers for each class. A softmax turns the scores into probabilities. The predicted class is the largest probability, and that probability is the model's confidence.</li>
+</ol>
+<p>Training adjusts every filter and weight (9,412 numbers in the compact model, about 94,000 in the standard one) so that the probability of the correct label goes up on thousands of labeled windows. The interactive <a href="https://github.com/Denolle-Lab/tiny-cnn-seismicML/tree/main/explainer-app">explainer app</a> runs the compact model in the browser and shows each layer's output for a real waveform.</p>
+<h3 style="margin-top:22px">How often is it right?</h3>
+<p>These are held-out results for the two standard models: windows recorded after every training date. Rows are the true class and columns are the prediction. The diagonal is correct.</p>
+<div class="grid2" id="cms"></div>
+
+<h2 id="limits">Limitations</h2>
+<div class="lim">
+  <article><h3>Labels come from rules, not from people</h3><p>The labels are "weak": 07–19 h at a school is called Traffic even if a given minute is quiet, and a timetable window is called Train even if the train is late. Some held-out "errors" are really wrong labels. The <a href="review/index.html">review site</a> lets students and teachers mark windows they disagree with.</p></article>
+  <article><h3>Each class comes from one place</h3><p>Trains are only from K222, aircraft only from Turnagain, and earthquakes only from AK broadbands. A model could learn the site or the sensor instead of the source. For example, it could treat "accelerometer" as Train. Held-out windows come from the same stations, so this test cannot catch that. A Shake that is new to the model is the real test.</p></article>
+  <article><h3>No sense of loudness, short memory</h3><p>Because each window is z-scored, a faint distant quake and a strong local one look alike, and so can a gust of wind. Each feature also sees only about 0.45 s, and the global average discards order. The network knows <em>what</em> patterns occur but not <em>when</em>. Slow, long sources such as trains, and future avalanches, depend on fairly crude summaries.</p></article>
+  <article><h3>One label per minute</h3><p>A 60 s window can hold a truck <em>and</em> an earthquake. The model must choose one, and it has never seen mixed windows. It also cannot say "something new". An avalanche or a snowplow gets forced into the nearest known class, often with high confidence.</p></article>
+  <article><h3>Small earthquakes and short periods</h3><p>The catalog starts at M 3.0, and the traffic set covers a single week in September. Smaller local quakes, winter conditions (frozen ground, snow, studded tires) and holiday traffic are not represented. Noise vs Aircraft (8–10% of noise windows) and Traffic vs Noise are still the most common confusions.</p></article>
+  <article><h3>Held-out Train windows are not independent</h3><p>Only 85 Train windows exist outside training, and they come from the test split of the human-source models, not from new days. Their 100% score is probably optimistic.</p></article>
+</div>
+
+<footer>
+  Built from <code>datasets/</code> and <code>docs/figures/</code> in <a href="https://github.com/Denolle-Lab/tiny-cnn-seismicML">Denolle-Lab/tiny-cnn-seismicML</a>. Earthquake catalog: USGS ComCat, fetched 2026-10-08. Map tiles © OpenStreetMap contributors. Regenerate with <code>python scripts/make_report_page.py</code>.
+</footer>
+</main>
+
+<script>
+const EVENTS = __EVENTS__;   // [id, time, mag, lat, lon, depth_km, place, set]
+const STATIONS = [
+  ["AK.FIRE",61.1426,-150.2164,"earthquake","Fire Island broadband (BHZ). Earthquake + pre-event noise windows."],
+  ["AK.RC01",61.0889,-149.7390,"earthquake","Rabbit Creek broadband (BHZ). Earthquake + pre-event noise windows."],
+  ["AK.SSN",61.4636,-150.7467,"earthquake","Susitna broadband (BHZ). Earthquake + pre-event noise windows."],
+  ["AK.K222",61.0876,-149.8366,"train","Chapel by the Sea, Potter Marsh. Strong-motion accelerometer (HNZ), 100 m from the Alaska Railroad. 734 Train windows."],
+  ["AM.R1796",61.1982,-149.9129,"traffic","Raspberry Shake at Romig Middle School (0.12 km). 1,590 Traffic windows."],
+  ["AM.R3130",61.1982,-149.9066,"traffic","Raspberry Shake, Romig Middle School / West High School campus. 1,496 Traffic windows."],
+  ["AM.R4017",61.1351,-149.9317,"traffic","Raspberry Shake near Mears Middle School, Minnesota Dr south."],
+  ["AM.R9EA1",61.1261,-149.9217,"traffic","Raspberry Shake near Mears Middle School, W 100th Ave."],
+  ["AM.R2A1A",61.1892,-149.8904,"traffic","Raspberry Shake near Frontier Charter School, W Northern Lights Blvd."],
+  ["AM.RF528",61.2162,-149.8060,"traffic","Raspberry Shake near Williwaw Elementary, near the Glenn Hwy."],
+  ["AM.RFD97",61.1982,-149.9449,"aircraft","Raspberry Shake at Turnagain Elementary, 3.2 km north of runway 15/33. 435 Aircraft windows."],
+  ["AM.R9286",61.1982,-149.9556,"aircraft","Raspberry Shake in Turnagain, 3.0 km north of runway 15/33. 544 Aircraft windows."]
+];
+const PLACES = [
+  ["Romig Middle School",61.1990,-149.9175,"Partner school, 2500 Minnesota Dr. Shares a campus with West High. Hosts AM.R1796 and AM.R3130. Marker position approximate."],
+  ["Ted Stevens Anchorage Intl (ANC)",61.1744,-149.9964,"Runway 15/33 source of the Aircraft class."]
+];
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const dark = () => matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.dataset.theme !== 'light' || document.documentElement.dataset.theme === 'dark';
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// ---------- map ----------
+(function(){
+  if (!window.L) { document.getElementById('map').textContent = 'Map library did not load.'; return; }
+  const map = L.map('map', {scrollWheelZoom:false});
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors', maxZoom:18,
+    className: dark() ? 'tiles-dark' : ''}).addTo(map);
+  const evs = EVENTS.slice().sort((a,b)=>b[2]-a[2]);
+  for (const e of evs) {
+    const ho = e[7]==='heldout';
+    L.circleMarker([e[3],e[4]], {radius: 1.5*Math.pow(1.8, e[2]-3)+2, color: ho?css('--heldout'):css('--earthquake'),
+      weight: ho?1.5:1, fillColor: css('--earthquake'), fillOpacity: ho?0:.35})
+     .bindPopup(`<b>M ${e[2]}</b> · ${esc(e[6])}<br>${e[1].replace('T',' ')} UTC · ${e[5]} km deep<br>${ho?'held-out (2026)':'training'} · <a href="https://earthquake.usgs.gov/earthquakes/eventpage/${e[0]}" target="_blank" rel="noopener">USGS ${e[0]}</a>`)
+     .addTo(map);
+  }
+  const tri = c => L.divIcon({className:'', iconSize:[16,14], iconAnchor:[8,10],
+    html:`<svg width="16" height="14" viewBox="0 0 16 14"><path d="M8 1 L15 13 L1 13 Z" fill="${css('--'+c)}" stroke="${css('--paper')}" stroke-width="1.5"/></svg>`});
+  for (const s of STATIONS) L.marker([s[1],s[2]], {icon:tri(s[3]), title:s[0]}).bindPopup(`<b>${s[0]}</b><br>${esc(s[4])}`).addTo(map);
+  const sq = L.divIcon({className:'', iconSize:[12,12], iconAnchor:[6,6],
+    html:`<div style="width:12px;height:12px;background:${css('--ink')};border:2px solid ${css('--paper')};border-radius:2px"></div>`});
+  for (const p of PLACES) L.marker([p[1],p[2]], {icon:sq, title:p[0]}).bindPopup(`<b>${esc(p[0])}</b><br>${esc(p[3])}`)
+    .bindTooltip(p[0], {permanent: p[0].startsWith('Romig'), direction:'right', offset:[8,0]}).addTo(map);
+  const city = L.latLngBounds([[61.07,-150.02],[61.23,-149.72]]);
+  const region = L.latLngBounds(EVENTS.map(e=>[e[3],e[4]]));
+  map.fitBounds(city);
+  const bc = document.getElementById('v-city'), br = document.getElementById('v-region');
+  bc.onclick = () => { map.fitBounds(city); bc.setAttribute('aria-pressed','true'); br.setAttribute('aria-pressed','false'); };
+  br.onclick = () => { map.fitBounds(region, {padding:[10,10]}); br.setAttribute('aria-pressed','true'); bc.setAttribute('aria-pressed','false'); };
+})();
+
+// ---------- catalog charts ----------
+function hist(id, vals, bins, fmt) {
+  const svg = document.getElementById(id), W=300, H=140, pb=22, pl=26;
+  const counts = bins.slice(0,-1).map((b,i)=>vals.filter(v=>v>=b && v<bins[i+1]).length);
+  const mx = Math.max(...counts), bw = (W-pl-4)/counts.length;
+  let s = `<line x1="${pl}" y1="${H-pb}" x2="${W}" y2="${H-pb}" stroke="${css('--rule')}"/>`;
+  s += `<text x="${pl-4}" y="12" text-anchor="end">${mx}</text>`;
+  counts.forEach((c,i)=>{ const h=(H-pb-14)*c/mx;
+    s += `<rect x="${pl+i*bw+1}" y="${H-pb-h}" width="${bw-2}" height="${h}" rx="1.5" fill="${css('--earthquake')}"><title>${fmt(bins[i])}–${fmt(bins[i+1])}: ${c}</title></rect>`;
+    if (i%Math.ceil(counts.length/6)===0) s += `<text x="${pl+i*bw}" y="${H-6}">${fmt(bins[i])}</text>`; });
+  svg.innerHTML = s;
+}
+const rng = (a,b,st) => { const r=[]; for(let x=a; x<=b+1e-9; x+=st) r.push(+x.toFixed(2)); return r; };
+hist('h-mag', EVENTS.map(e=>e[2]), rng(3,6.2,0.2), v=>v.toFixed(1));
+hist('h-dep', EVENTS.map(e=>e[5]), rng(0,180,15), v=>v.toFixed(0));
+hist('h-yr',  EVENTS.map(e=>+e[1].slice(0,4)), rng(2020,2027,1), v=>"'"+String(v).slice(2));
+const ntr = EVENTS.filter(e=>e[7]==='train').length;
+document.getElementById('nq').textContent = EVENTS.length;
+document.getElementById('ntr').textContent = ntr;
+document.getElementById('nho').textContent = EVENTS.length-ntr;
+
+// ---------- catalog table ----------
+let sortK = 1, sortDir = -1;
+function renderTable(){
+  const set = document.getElementById('f-set').value, mm = +document.getElementById('f-mag').value,
+        q = document.getElementById('f-q').value.toLowerCase();
+  const rows = EVENTS.filter(e => (!set||e[7]===set) && e[2]>=mm && (!q||e[6].toLowerCase().includes(q)))
+    .sort((a,b)=> (a[sortK]>b[sortK]?1:a[sortK]<b[sortK]?-1:0)*sortDir);
+  document.querySelector('#evtbl tbody').innerHTML = rows.map(e=>`<tr><td>${e[1].replace('T',' ')}</td><td class="num">${e[2].toFixed(1)}</td><td class="num">${e[5].toFixed(0)}</td><td>${esc(e[6])}</td><td><span class="tag">${e[7]==='heldout'?'held-out':'training'}</span></td><td><a href="https://earthquake.usgs.gov/earthquakes/eventpage/${e[0]}" target="_blank" rel="noopener">${e[0]}</a></td></tr>`).join('');
+  document.getElementById('evcount').textContent = `${rows.length} of ${EVENTS.length} events`;
+}
+['f-set','f-mag','f-q'].forEach(id=>document.getElementById(id).addEventListener('input', renderTable));
+document.querySelectorAll('#evtbl th[data-k]').forEach(th=>th.addEventListener('click',()=>{
+  const k=+th.dataset.k; sortDir = (k===sortK)? -sortDir : (k===6||k===7?1:-1); sortK=k; renderTable(); }));
+renderTable();
+
+// ---------- confusion matrices (held-out, from datasets/heldout_inference/heldout_predictions.csv) ----------
+const CMS = [
+  {name:'standard-v2 · Noise / Traffic / Earthquake', cls:['Noise','Traffic','Earthquake'], m:[[90,7,3],[2,98,0],[1,0,99]]},
+  {name:'standard-v3 · Noise / Traffic / Train / Aircraft', cls:['Noise','Traffic','Train','Aircraft'], m:[[90,2,0,8],[6,93,1,0],[0,0,85,0],[2,0,0,98]]}
+];
+document.getElementById('cms').innerHTML = CMS.map(c=>{
+  let h = `<div class="card"><h3 style="font-size:15px">${c.name}</h3><div class="scroll"><table class="cm"><tr><th></th>${c.cls.map(x=>`<th>${x}</th>`).join('')}</tr>`;
+  c.m.forEach((r,i)=>{ const n=r.reduce((a,b)=>a+b,0);
+    h += `<tr><td class="lab">${c.cls[i]}</td>` + r.map((v,j)=>{ const f=v/n;
+      const col = i===j ? `color-mix(in srgb, var(--aircraft) ${Math.round(15+75*f)}%, transparent)` : (v? `color-mix(in srgb, var(--earthquake) ${Math.round(10+180*f)}%, transparent)` : 'transparent');
+      return `<td style="background:${col};${i===j&&f>.5?'font-weight:500':''}" title="${v} of ${n}">${v}</td>`; }).join('') + '</tr>'; });
+  return h + `</table></div><p class="eyebrow" style="margin:6px 0 0">rows = true · columns = predicted</p></div>`;
+}).join('');
+</script>
+</body>
+</html>
