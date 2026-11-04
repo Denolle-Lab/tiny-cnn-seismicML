@@ -1,0 +1,18 @@
+Dataset AK_quiet_2026-08-27
+============================================================
+
+Generated: 2026-10-22 11:13:23
+Command: scripts/collect_continuous_windows.py --config configs/ak_quiet_stations.yaml
+Range: 2026-08-27T08:00:00.000000Z -> 2026-08-28T08:00:00.000000Z
+Window: 60 s @ 100 Hz, no overlap, bandpass 2.0-20.0 Hz
+Positive class: Noise (label 0), method all
+
+Windows per station and label:
+label_name  Noise
+station          
+K220          817
+
+Files:
+  AK_quiet_2026-08-27_waveforms_20261022_111323.npy  n=817
+  AK_quiet_2026-08-27_labels_20261022_111323.npy
+  AK_quiet_2026-08-27_metadata_20261022_111323.csv

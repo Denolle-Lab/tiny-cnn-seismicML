@@ -1,0 +1,3 @@
+station,event_id,detected,peak_ratio,n_windows,n_runs
+K217,denali_star_out_2026-06-14,True,10.596165148024987,2,1
+MS01,denali_star_out_2026-06-14,False,2.3221915909728112,0,0

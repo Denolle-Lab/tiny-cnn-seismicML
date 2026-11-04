@@ -67,8 +67,11 @@ def main():
                 print(f'{prefix}: {"identical" if same else "DIFFERS"} ({len(meta)} vs {len(ref)} windows, '
                       f'committed stamp {committed[-1].stem.split("_metadata_")[-1]}, local {stamp})')
                 continue
-            for old in OUT.glob(f'{prefix}_*'):
-                old.unlink()  # one stamp per prefix in the repo
+            # one stamp per prefix in the repo; only this prefix's own files, since a
+            # bare '{prefix}_*' for prefix 'AK' would also remove every AK_<other> set
+            for pat in (f'{prefix}_metadata_*.csv', f'{prefix}_summary_*.txt', f'{prefix}_events_report.csv'):
+                for old in OUT.glob(pat):
+                    old.unlink()
             shutil.copy(mf, OUT / mf.name)
             for extra in (Path(d) / f'{prefix}_summary_{stamp}.txt', Path(d) / f'{prefix}_events_report.csv'):
                 if extra.exists():

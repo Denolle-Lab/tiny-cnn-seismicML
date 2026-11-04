@@ -1,0 +1,22 @@
+Dataset AK
+============================================================
+
+Generated: 2026-09-16 14:25:15
+Command: scripts/collect_ak_events.py --config configs/ak_events.yaml
+Pick exclusion: off (--exclude-picks drops noise windows containing a pick of another catalogued event)
+Manual review: dropped 98 windows listed in ak_dropped_windows.csv
+Catalog: USGS M3.0-7.0 2020-01-01 -> 2025-12-01, 700 events attempted, 477 with windows
+Windows: earthquake [P-30s, P+90s], noise [P-90s, P-30s] @ 100 Hz, bandpass 2.0-20.0 Hz, z-scored: False
+P arrivals: ComCat phase-data picks; skipped 293 station-events without a pick, 2 without waveforms, 1 with download/processing errors
+
+Windows per station and label:
+label_name  Earthquake  Noise
+station                      
+FIRE               375    355
+RC01               426    375
+SSN                223    196
+
+Files:
+  AK_waveforms_20260916_142515.npy  n=1950
+  AK_labels_20260916_142515.npy
+  AK_metadata_20260916_142515.csv

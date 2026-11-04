@@ -1,0 +1,54 @@
+Seismic CNN Training Summary - STANDARD Model
+============================================================
+
+Date: 2026-10-26 13:59:02
+
+Model Configuration:
+  Model id: standard-v4
+  Checkpoint: seismic_cnn_standard_ak_20261026_135858.pth
+  Type: standard
+  Parameters: 93,634
+  Input shape: (batch, 1, 6000)
+  Number of classes: 2
+
+Training Configuration:
+  Epochs: 60
+  Batch size: 32
+  Learning rates: {'compact': 0.0005, 'standard': 0.0004}
+  Weight decay: 0.001
+
+Provenance:
+  data_source: ak
+  extra_sources: ['AM_traffic_*', 'AK_train_*', 'AK_trainnorth_*', 'AM_aircraft_*', 'AK_quiet_*']
+  model_classes_key: earthquake
+  noise_max_per_station: 150
+  noise_match_traffic: True
+  traffic_max_per_station: 300
+  n_onset_crops: 1
+  n_free_crops: 1
+  split_method: StratifiedGroupKFold by event_id (AK events) or station + local day, seed 42
+  split_manifest: datasets/splits/split_20261026_135705.csv
+  split_sizes: {'train': 3436, 'val': 361, 'test': 501}
+  git_commit: 1c6f0eaf536577fb1b618f9b85abe139ff5e797a
+  git_dirty: True
+
+Dataset Split:
+  Train: 3436 samples
+  Validation: 361 samples
+  Test: 501 samples
+
+Results:
+  Best validation loss: 0.0119
+  Final train accuracy: 99.62%
+  Final val accuracy: 99.17%
+  Test accuracy: 98.80%
+
+Classification Report:
+              precision    recall  f1-score   support
+
+       Noise      0.986     0.993     0.990       289
+  Earthquake      0.990     0.981     0.986       212
+
+    accuracy                          0.988       501
+   macro avg      0.988     0.987     0.988       501
+weighted avg      0.988     0.988     0.988       501

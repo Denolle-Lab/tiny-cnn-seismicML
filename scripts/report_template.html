@@ -104,25 +104,26 @@
 
 <div class="tiles">
   <div class="tile"><b>5</b><span>signal classes trained (avalanche planned)</span></div>
-  <div class="tile"><b>12</b><span>stations: 4 AK network, 8 Raspberry Shake</span></div>
+  <div class="tile"><b>15</b><span>stations: 7 AK network, 8 Raspberry Shake</span></div>
   <div class="tile"><b>477</b><span>catalog earthquakes in training, M 3.0–6.0</span></div>
-  <div class="tile"><b>485</b><span>held-out windows no model trained on</span></div>
+  <div class="tile"><b>500</b><span>held-out windows no model trained on</span></div>
   <div class="tile"><b>9.4k</b><span>parameters in the compact CNN</span></div>
 </div>
 
 <h2 id="datasets">Datasets</h2>
-<p>We built four training sets, one per signal source. Each set has its own <em>Noise</em> windows, recorded at quiet hours or just before an earthquake. Every window is 60 s of the vertical component at 100 samples per second, so the model always gets 6,000 numbers. No window was labelled by hand. Each label comes from a rule that can be rerun, such as a catalog time, a train timetable or the hour of day.</p>
+<p>We built four training sets, one per signal source, plus a quiet AK site for extra <em>Noise</em>. Each set has its own Noise windows, recorded at quiet hours, in quiet minutes between trains or flights, or just before an earthquake. The train and aircraft sets also give <em>Traffic</em> windows: the daytime minutes at those sites that hold no train or aircraft, so a model cannot tell the class from the site or the hour. Every window is 60 s of the vertical component at 100 samples per second, so the model always gets 6,000 numbers. No window was labelled by hand. Each label comes from a rule that can be rerun, such as a catalog time, a train timetable or the hour of day.</p>
 <div class="scroll"><table>
   <tr><th>Set</th><th>Stations</th><th>Sensor</th><th>Period</th><th>Label rule</th><th class="num">Signal windows</th><th class="num">Noise windows</th></tr>
   <tr><td><span class="sw earthquake"></span>Earthquake</td><td>AK.FIRE, AK.RC01, AK.SSN</td><td>broadband seismometer</td><td>2020-06 to 2025-11</td><td>USGS ComCat event M 3–7 within 150 km; window cut at the reviewed P pick</td><td class="num">1,024</td><td class="num">926</td></tr>
   <tr><td><span class="sw traffic"></span>Traffic</td><td>6 Shakes at schools incl. Romig (R1796, R3130)</td><td>Raspberry Shake geophone</td><td>week of 2026-09-07</td><td>07–19 local = Traffic, 01–05 local = Noise; loud night passes = Traffic</td><td class="num">7,663</td><td class="num">7,914</td></tr>
-  <tr><td><span class="sw train"></span>Train</td><td>AK.K222, Potter Marsh</td><td>strong-motion accelerometer</td><td>2026-05-15 to 09-13</td><td>Alaska Railroad timetable ±15 min, then an energy threshold</td><td class="num">734</td><td class="num">8,848</td></tr>
-  <tr><td><span class="sw aircraft"></span>Aircraft</td><td>AM.RFD97, AM.R9286, Turnagain</td><td>Raspberry Shake geophone</td><td>2026-08-17 to 09-13</td><td>20–45 Hz burst seen on both stations at once, 3 km from runway 15/33</td><td class="num">979</td><td class="num">3,429</td></tr>
+  <tr><td><span class="sw train"></span>Train</td><td>AK.K222 (Potter Marsh), AK.K217 (Chugiak), AK.MS01 (Wasilla)</td><td>strong-motion accelerometer</td><td>2026-05-15 to 09-13</td><td>Alaska Railroad timetable ±15 min, then an energy threshold; daytime at K222 between trains = Traffic (4,550)</td><td class="num">1,029</td><td class="num">21,184</td></tr>
+  <tr><td><span class="sw aircraft"></span>Aircraft</td><td>AM.RFD97, AM.R9286, Turnagain</td><td>Raspberry Shake geophone</td><td>2026-08-17 to 09-13</td><td>20–45 Hz burst seen on both stations at once, 3 km from runway 15/33; night Noise at least 90 s from every ANC flight; daytime between flights = Traffic (3,350)</td><td class="num">979</td><td class="num">2,388</td></tr>
+  <tr><td><span class="sw noise"></span>Quiet site</td><td>AK.K220, near ANC</td><td>strong-motion accelerometer</td><td>six days, 2026-08-18 to 09-10</td><td>every quiet minute, day and night</td><td class="num">–</td><td class="num">5,090</td></tr>
 </table></div>
-<p>Before training, the Noise class is capped at 150 windows per station, so that K222's 8,848 quiet windows do not swamp the other classes. Training, validation and test sets are split by earthquake or by station-day, so two windows from one event never land on both sides. The <strong>held-out set</strong> has 485 more windows (about 100 per class) recorded after every training date, at the same stations.</p>
+<p>Every set is band-passed 2–20 Hz before training. Traffic is capped at 300 windows per station and Noise at 150, so that K222's 9,967 Noise windows do not swamp the other classes; in models with a Traffic class, a station keeps as much Noise as Traffic. Training, validation and test sets are split by earthquake or by station-day, so two windows from one event never land on both sides. The <strong>held-out set</strong> has 500 more windows (100 per class) from dates outside every training set, at the same stations.</p>
 <figure>
   <img src="figures/label_examples.png" alt="Five example windows per class with their spectrograms" loading="lazy">
-  <figcaption>Five training windows per class, each 60 s of filtered counts with its spectrogram below. Earthquakes start with a sharp P arrival. Traffic is continuous 5–30 Hz energy. A train is a long, slowly rising and falling rumble. Aircraft add energy above 20 Hz.</figcaption>
+  <figcaption>Five training windows per class, each 60 s of filtered counts with its spectrogram below. Earthquakes start with a sharp P arrival. Traffic is continuous energy up to the 20 Hz filter edge. A train is a long, slowly rising and falling rumble. An aircraft is only a faint, slow rise: its strongest energy, 20–45 Hz, is removed by the 2–20 Hz filter. Earthquake spectrograms are empty above 25 Hz because the broadbands record at 50 Hz.</figcaption>
 </figure>
 
 <h2 id="map-sec">Map: Romig Middle School, stations and earthquakes</h2>
@@ -135,7 +136,8 @@
 <div class="legend">
   <span><i class="tri" style="color:var(--earthquake)"></i>broadband (earthquake set)</span>
   <span><i class="tri" style="color:var(--traffic)"></i>traffic Shake</span>
-  <span><i class="tri" style="color:var(--train)"></i>train station K222</span>
+  <span><i class="tri" style="color:var(--train)"></i>train station (K222, K217, MS01)</span>
+  <span><i class="tri" style="color:var(--noise)"></i>quiet AK site K220</span>
   <span><i class="tri" style="color:var(--aircraft)"></i>aircraft Shake</span>
   <span><i class="sq"></i>school / airport</span>
   <span><i class="dot f"></i>training earthquake (size = magnitude)</span>
@@ -152,14 +154,14 @@
     <p>Cars, trucks and buses on streets near the school. Each vehicle passing adds a few seconds of shaking. In the daytime these overlap into a steady hum that stops at night.</p>
     <dl><dt>Duration</dt><dd>continuous in the daytime; 2–10 s per vehicle</dd><dt>Frequency</dt><dd>5–30 Hz</dd><dt>Label</dt><dd>time of day, plus loud single night passes</dd></dl></article>
   <article class="card"><h3><span class="sw train"></span>Train</h3>
-    <p>Alaska Railroad trains on the Seward line, 100 m from station K222 at Potter Marsh. A train is heard for a minute or more and grows and fades as it passes.</p>
+    <p>Alaska Railroad trains on the Seward line, 100 m from station K222 at Potter Marsh, and on the main line north past K217 (Chugiak) and MS01 (Wasilla). A train is heard for a minute or more and grows and fades as it passes.</p>
     <dl><dt>Duration</dt><dd>1–3 min, symmetric build-up and fade</dd><dt>Frequency</dt><dd>2–20 Hz, with a strong low-frequency part</dd><dt>Label</dt><dd>passenger timetable ± 15 min, energy threshold</dd></dl></article>
   <article class="card"><h3><span class="sw aircraft"></span>Aircraft</h3>
     <p>Jets landing on or taking off from runway 15/33 at Ted Stevens Anchorage International. Engine sound couples into the ground, so the Shakes in Turnagain pick it up.</p>
-    <dl><dt>Duration</dt><dd>15–60 s</dd><dt>Frequency</dt><dd>20–45 Hz, above most other sources</dd><dt>Label</dt><dd>high-frequency burst on both Turnagain Shakes at once</dd></dl></article>
+    <dl><dt>Duration</dt><dd>15–60 s</dd><dt>Frequency</dt><dd>20–45 Hz, above most other sources; the models see only 2–20 Hz, where an aircraft is faint</dd><dt>Label</dt><dd>high-frequency burst on both Turnagain Shakes at once</dd></dl></article>
   <article class="card"><h3><span class="sw noise"></span>Noise</h3>
-    <p>Everything else: wind, ocean microseism, furnaces, footsteps, the instrument itself. It differs a lot between sites. A quiet K222 window is about 2 counts rms, while a Romig window is about 200.</p>
-    <dl><dt>Duration</dt><dd>always present</dd><dt>Frequency</dt><dd>broad; site-dependent</dd><dt>Label</dt><dd>01–05 local time, or 30–90 s before a P wave</dd></dl></article>
+    <p>Everything else: wind, ocean microseism, furnaces, footsteps, the instrument itself. It differs a lot between sites. A quiet K222 window is about 4 counts rms, while a Romig window is about 170.</p>
+    <dl><dt>Duration</dt><dd>always present</dd><dt>Frequency</dt><dd>broad; site-dependent</dd><dt>Label</dt><dd>01–05 local time, quiet daytime minutes (K222, Turnagain, K220), or 30–90 s before a P wave</dd></dl></article>
   <article class="card planned"><h3><span class="sw avalanche"></span>Avalanche <span class="tag" style="margin-left:8px">planned</span></h3>
     <p>Snow avalanches in the Chugach make emergent, cigar-shaped signals that last tens of seconds. We have not collected these yet; see <a href="https://github.com/Denolle-Lab/tiny-cnn-seismicML/issues/9">issue #9</a>.</p>
     <dl><dt>Duration</dt><dd>20–120 s, slow start</dd><dt>Frequency</dt><dd>1–10 Hz</dd><dt>Label</dt><dd>not yet</dd></dl></article>
@@ -235,17 +237,21 @@
 </ol>
 <p>Training adjusts every filter and weight (9,412 numbers in the compact model, about 94,000 in the standard one) so that the probability of the correct label goes up on thousands of labeled windows. The interactive <a href="https://github.com/Denolle-Lab/tiny-cnn-seismicML/tree/main/explainer-app">explainer app</a> runs the compact model in the browser and shows each layer's output for a real waveform.</p>
 <h3 style="margin-top:22px">How often is it right?</h3>
-<p>These are held-out results for the two standard models: windows recorded after every training date. Rows are the true class and columns are the prediction. The diagonal is correct.</p>
+<p>These are held-out results for the two standard models: windows from dates outside every training set. Rows are the true class and columns are the prediction. The diagonal is correct.</p>
 <div class="grid2" id="cms"></div>
 
 <h2 id="limits">Limitations</h2>
 <div class="lim">
+  <!-- the percentages below are typed by hand from heldout_predictions.csv
+       (standard-v3, compact-v4): update after a retrain -->
   <article><h3>Labels come from rules, not from people</h3><p>The labels are "weak": 07–19 h at a school is called Traffic even if a given minute is quiet, and a timetable window is called Train even if the train is late. Some held-out "errors" are really wrong labels. The <a href="review/index.html">review site</a> lets students and teachers mark windows they disagree with.</p></article>
-  <article><h3>Each class comes from one place</h3><p>Trains are only from K222, aircraft only from Turnagain, and earthquakes only from AK broadbands. A model could learn the site or the sensor instead of the source. For example, it could treat "accelerometer" as Train. Held-out windows come from the same stations, so this test cannot catch that. A Shake that is new to the model is the real test.</p></article>
+  <article><h3>Each class comes from few places</h3><p>Trains come from three AK strong-motion sites (K222, K217, MS01), aircraft only from the two Turnagain Shakes, and earthquakes only from three AK broadbands. A model could learn the site or the sensor instead of the source. For example, it could treat "accelerometer" as Train. Held-out windows come from the same stations, so this test cannot catch that. A Shake that is new to the model is the real test.</p></article>
   <article><h3>No sense of loudness, short memory</h3><p>Because each window is z-scored, a faint distant quake and a strong local one look alike, and so can a gust of wind. Each feature also sees only about 0.45 s, and the global average discards order. The network knows <em>what</em> patterns occur but not <em>when</em>. Slow, long sources such as trains, and future avalanches, depend on fairly crude summaries.</p></article>
   <article><h3>One label per minute</h3><p>A 60 s window can hold a truck <em>and</em> an earthquake. The model must choose one, and it has never seen mixed windows. It also cannot say "something new". An avalanche or a snowplow gets forced into the nearest known class, often with high confidence.</p></article>
-  <article><h3>Small earthquakes and short periods</h3><p>The catalog starts at M 3.0, and the traffic set covers a single week in September. Smaller local quakes, winter conditions (frozen ground, snow, studded tires) and holiday traffic are not represented. Noise vs Aircraft (8–10% of noise windows) and Traffic vs Noise are still the most common confusions.</p></article>
-  <article><h3>Held-out Train windows are not independent</h3><p>Only 85 Train windows exist outside training, and they come from the test split of the human-source models, not from new days. Their 100% score is probably optimistic.</p></article>
+  <article><h3>Small earthquakes and short periods</h3><p>The catalog starts at M 3.0, and the traffic set covers a single week in September. Smaller local quakes, winter conditions (frozen ground, snow, studded tires) and holiday traffic are not represented. Traffic vs Noise and Noise vs Aircraft are still the most common confusions: the standard four-class model calls 18% of held-out Traffic Noise and 9% of Noise Aircraft (25% for the compact one).</p></article>
+  <article><h3>Aircraft are faint in the training band</h3><p>Aircraft are found by their 20–45 Hz energy, but every class is trained on 2–20 Hz so that the filter band cannot give the class away. In that band most aircraft are only a faint rise above the Turnagain background, and the models confuse them with quiet Noise. All aircraft come from one airport and two Shakes.</p></article>
+  <article><h3>Earthquakes have no energy above 25 Hz</h3><p>The broadbands behind the Earthquake class record at 50 samples per second, so their windows hold nothing above 25 Hz, while every other set does. A model could use that gap as a shortcut; a 200 Hz accelerometer would show it.</p></article>
+  <article><h3>Held-out Train windows are not independent</h3><p>Passenger service ended on 2026-09-14, so only 2 of the 100 held-out Train windows are new passages; the other 98 come from the test split of the four-class models, not from new days. Their 99% score is probably optimistic.</p></article>
 </div>
 
 <footer>
@@ -255,13 +261,17 @@
 
 <script>
 const EVENTS = __EVENTS__;   // [id, time, mag, lat, lon, depth_km, place, set]
+// window counts are typed by hand from the training splits: update after a retrain
 const STATIONS = [
   ["AK.FIRE",61.1426,-150.2164,"earthquake","Fire Island broadband (BHZ). Earthquake + pre-event noise windows."],
   ["AK.RC01",61.0889,-149.7390,"earthquake","Rabbit Creek broadband (BHZ). Earthquake + pre-event noise windows."],
   ["AK.SSN",61.4636,-150.7467,"earthquake","Susitna broadband (BHZ). Earthquake + pre-event noise windows."],
   ["AK.K222",61.0876,-149.8366,"train","Chapel by the Sea, Potter Marsh. Strong-motion accelerometer (HNZ), 100 m from the Alaska Railroad. 734 Train windows."],
-  ["AM.R1796",61.1982,-149.9129,"traffic","Raspberry Shake at Romig Middle School (0.12 km). 1,590 Traffic windows."],
-  ["AM.R3130",61.1982,-149.9066,"traffic","Raspberry Shake, Romig Middle School / West High School campus. 1,496 Traffic windows."],
+  ["AK.K217",61.3960,-149.5155,"train","Chugiak Fire Station. Strong-motion accelerometer (HNZ), 0.30 km from the Alaska Railroad. 165 Train windows (northbound Denali Star), May–June 2026."],
+  ["AK.MS01",61.5802,-149.4946,"train","Burchell High School, Wasilla. Strong-motion accelerometer (HNZ), 0.21 km from the Alaska Railroad. 130 Train windows (northbound Denali Star)."],
+  ["AK.K220",61.1540,-150.0552,"noise","Strong-motion accelerometer (HNZ) near ANC. Quiet Noise windows only, day and night."],
+  ["AM.R1796",61.1982,-149.9129,"traffic","Raspberry Shake at Romig Middle School (0.12 km). 1,590 Traffic windows collected, 300 used in training."],
+  ["AM.R3130",61.1982,-149.9066,"traffic","Raspberry Shake, Romig Middle School / West High School campus. 1,496 Traffic windows collected, 300 used in training."],
   ["AM.R4017",61.1351,-149.9317,"traffic","Raspberry Shake near Mears Middle School, Minnesota Dr south."],
   ["AM.R9EA1",61.1261,-149.9217,"traffic","Raspberry Shake near Mears Middle School, W 100th Ave."],
   ["AM.R2A1A",61.1892,-149.8904,"traffic","Raspberry Shake near Frontier Charter School, W Northern Lights Blvd."],
@@ -344,10 +354,7 @@ document.querySelectorAll('#evtbl th[data-k]').forEach(th=>th.addEventListener('
 renderTable();
 
 // ---------- confusion matrices (held-out, from datasets/heldout_inference/heldout_predictions.csv) ----------
-const CMS = [
-  {name:'standard-v2 · Noise / Traffic / Earthquake', cls:['Noise','Traffic','Earthquake'], m:[[90,7,3],[2,98,0],[1,0,99]]},
-  {name:'standard-v3 · Noise / Traffic / Train / Aircraft', cls:['Noise','Traffic','Train','Aircraft'], m:[[90,2,0,8],[6,93,1,0],[0,0,85,0],[2,0,0,98]]}
-];
+const CMS = __CMS__;
 document.getElementById('cms').innerHTML = CMS.map(c=>{
   let h = `<div class="card"><h3 style="font-size:15px">${c.name}</h3><div class="scroll"><table class="cm"><tr><th></th>${c.cls.map(x=>`<th>${x}</th>`).join('')}</tr>`;
   c.m.forEach((r,i)=>{ const n=r.reduce((a,b)=>a+b,0);

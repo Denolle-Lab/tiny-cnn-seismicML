@@ -49,6 +49,15 @@ collection:
   noise_hours: [1, 5]       # Noise means the same quiet hours as in the traffic sets
   noise_max_ratio: 3        # drop Noise windows 3x above the local median: unscheduled (freight) trains
   noise_keep: 0.3           # ~70 Noise windows per station-day after the two filters; positives all kept
+  # Daytime at K222 (Concord review): windows outside every passage's search
+  # span are Old Seward Highway traffic, so they are Traffic, not dropped;
+  # otherwise every daytime window here is Train. 06-23 covers all four
+  # passages (07:15, 10:15, 20:45, 21:45 local).
+  day_label: Traffic
+  day_label_hours: [6, 23]
+  day_label_max_ratio: 1.5  # 5-30 Hz rms above 1.5x the local median: maybe an unscheduled (freight) train, dropped
+  day_label_keep: 0.05      # ~50 Traffic per station-day; the notebook caps Traffic at 300 per station
+  day_noise_max_ratio: 1.5  # 2-20 Hz rms at most 1.5x the night Noise median: quiet minutes between cars stay Noise
   review_sheet: 0
   tz: America/Anchorage
   days:

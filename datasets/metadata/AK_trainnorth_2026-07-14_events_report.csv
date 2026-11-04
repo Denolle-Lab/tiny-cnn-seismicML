@@ -1,0 +1,2 @@
+station,event_id,detected,peak_ratio,n_windows,n_runs
+MS01,denali_star_out_2026-07-14,True,8.64848065202407,2,1

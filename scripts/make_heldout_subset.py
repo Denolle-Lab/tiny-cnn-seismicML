@@ -13,7 +13,8 @@ spread evenly across stations; Noise is spread across the four sites.
 Train is the exception: K222 passenger service ended 2026-09-14, so only a
 couple of passages are unseen. The class is filled from the grouped test
 split of the only models with a Train class (compact-v4 / standard-v3,
-TRAIN_TEST_MANIFEST): K222 days those two never trained or validated on.
+TRAIN_TEST_MANIFEST): K222, K217 and MS01 days those two never trained or
+validated on.
 Other runs may have trained on Noise from those days; Train is out of scope
 for them. heldout_source records where each window came from.
 
@@ -53,7 +54,7 @@ NOISE_PER_SET = {"heldout_AK": 25, "heldout_AM_traffic": 25,
                  "heldout_AM_aircraft": 25, "heldout_AK_train": 25}
 
 # Grouped split of the run that trained compact-v4 / standard-v3 (the Train models)
-TRAIN_TEST_MANIFEST = SPLITS_DIR / "split_20260930_144039.csv"
+TRAIN_TEST_MANIFEST = SPLITS_DIR / "split_20261026_130204.csv"
 TRAINING_DIR = REPO_ROOT / "notebooks" / "02_labeling" / "labeled_data"
 
 

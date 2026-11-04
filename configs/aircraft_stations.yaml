@@ -19,9 +19,11 @@
 # self-noise floor and cannot see aircraft. The Spenard Shakes (R8F48, S909E,
 # R6C15, 1.7 km from the 7/25 ends) and RA110 have served no data this summer.
 #
-# NOTE the training band: freqmax is 45 Hz here because the aircraft energy
-# is above 20 Hz. The AK earthquake set and the Romig traffic set are 2-20 Hz;
-# a Human model that includes Aircraft needs one band for all its classes.
+# NOTE the training band: 2-20 Hz, the same as the AK earthquake, traffic and
+# train sets. It was 2-45 Hz until 2026-10, and then the models could tell
+# Aircraft (and this set's Noise) from every other class by the filter band
+# alone (Concord review). The rule still finds aircraft in the raw 20-45 Hz
+# band (rule_band); only the saved waveforms are 2-20 Hz.
 
 stations:
   - code: RFD97
@@ -51,10 +53,24 @@ collection:
   rule_min_active_sec: 15
   rule_coincidence: 2
   freqmin: 2
-  freqmax: 45
+  freqmax: 20
   exclude_events: true
   noise_hours: [1, 5]       # Noise means the same quiet hours as in the other sets
-  noise_keep: 0.25
+  # ANC flies all night (15-22 flights an hour at 01-05): night Noise must be clear
+  # of every PANC arrival and departure by 90 s, which leaves ~44 windows per
+  # station-night (~17 at 180 s; the 2026-09-09 plots show no departure energy
+  # left in the 90 s margin).
+  noise_exclude_events: configs/events/anc_flights_2026-08-17_2026-09-22.csv
+  noise_exclude_pad: 90
+  noise_keep: 1.0           # was 0.25; the flight exclusion already thins Noise ~5x
+  # Daytime at Turnagain (Concord review): the windows that are not Aircraft are
+  # the neighbourhood background, Traffic; the few quiet, flight-free minutes are
+  # Noise. Without this every daytime window here is Aircraft.
+  day_label: Traffic
+  day_label_hours: [7, 19]
+  day_label_max_ratio: 1.5  # 20-45 Hz rms above 1.5x the local median: maybe a faint aircraft, dropped
+  day_label_keep: 0.1       # ~70 Traffic per station-day
+  day_noise_max_ratio: 1.5  # 2-20 Hz rms at most 1.5x the station's night Noise median
   review_sheet: 0
   tz: America/Anchorage
   days:

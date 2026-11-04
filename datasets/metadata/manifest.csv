@@ -1,164 +1,292 @@
-prefix,stamp,stations,windows,n_noise,n_aircraft,label_methods,n_traffic,n_train
-AK_k222_all_2026-09-09,20260914_125735,K222,1367,1367,,all,,
-AK_k222_all_2026-09-12,20260914_125747,K222,1369,1369,,all,,
-AK_train_2026-05-15,20260916_130819,K222,76,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0
-AK_train_2026-05-16,20260916_130829,K222,82,74,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,8.0
-AK_train_2026-05-17,20260916_130841,K222,80,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0
-AK_train_2026-05-18,20260916_130852,K222,80,76,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,4.0
-AK_train_2026-05-19,20260916_130902,K222,77,73,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,4.0
-AK_train_2026-05-20,20260916_130912,K222,77,69,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,8.0
-AK_train_2026-05-21,20260916_130923,K222,76,74,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,2.0
-AK_train_2026-05-22,20260916_130934,K222,79,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,4.0
-AK_train_2026-05-23,20260916_130944,K222,82,74,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,8.0
-AK_train_2026-05-24,20260916_130955,K222,85,78,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-05-25,20260916_131005,K222,84,76,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,8.0
-AK_train_2026-05-26,20260916_131015,K222,84,77,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-05-27,20260916_131026,K222,80,73,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-05-28,20260916_131036,K222,79,73,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-05-29,20260916_131046,K222,81,76,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0
-AK_train_2026-05-30,20260916_131057,K222,85,78,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-05-31,20260916_131107,K222,84,77,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-06-01,20260916_131118,K222,81,77,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,4.0
-AK_train_2026-06-02,20260916_131128,K222,75,67,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,8.0
-AK_train_2026-06-03,20260916_131139,K222,79,71,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,8.0
-AK_train_2026-06-04,20260916_131149,K222,81,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-06-05,20260916_131200,K222,80,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0
-AK_train_2026-06-06,20260916_131210,K222,86,79,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-06-07,20260916_131220,K222,78,71,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-06-08,20260916_131231,K222,79,74,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0
-AK_train_2026-06-09,20260916_131242,K222,75,65,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,10.0
-AK_train_2026-06-10,20260916_131252,K222,77,73,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,4.0
-AK_train_2026-06-11,20260916_131302,K222,78,70,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,8.0
-AK_train_2026-06-12,20260916_131312,K222,79,72,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-06-13,20260916_131322,K222,80,74,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-06-14,20260916_131435,K222,81,76,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0
-AK_train_2026-06-15,20260916_131446,K222,79,72,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-06-16,20260916_131457,K222,70,64,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-06-17,20260916_131507,K222,77,71,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-06-18,20260916_131517,K222,81,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-06-19,20260916_131527,K222,77,72,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0
-AK_train_2026-06-20,20260916_131538,K222,78,72,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-06-21,20260916_131547,K222,74,68,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-06-22,20260916_131558,K222,77,72,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0
-AK_train_2026-06-23,20260916_131610,K222,78,74,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,4.0
-AK_train_2026-06-24,20260916_131620,K222,74,67,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-06-25,20260916_131631,K222,76,71,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0
-AK_train_2026-06-26,20260916_131642,K222,79,73,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-06-27,20260916_131653,K222,79,72,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-06-28,20260916_131704,K222,82,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-06-29,20260916_131714,K222,77,74,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,3.0
-AK_train_2026-06-30,20260916_131725,K222,78,72,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-07-01,20260916_131738,K222,76,72,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,4.0
-AK_train_2026-07-02,20260916_131749,K222,82,77,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0
-AK_train_2026-07-03,20260916_131759,K222,78,73,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0
-AK_train_2026-07-04,20260916_131810,K222,83,78,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0
-AK_train_2026-07-05,20260916_131821,K222,83,77,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-07-06,20260916_131832,K222,81,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-07-07,20260916_131848,K222,79,73,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-07-08,20260916_131859,K222,78,73,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0
-AK_train_2026-07-09,20260916_131909,K222,76,71,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0
-AK_train_2026-07-10,20260916_131919,K222,84,77,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-07-11,20260916_131931,K222,81,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-07-12,20260916_131942,K222,78,72,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-07-13,20260916_131952,K222,85,73,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,12.0
-AK_train_2026-07-14,20260916_132002,K222,80,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0
-AK_train_2026-07-15,20260916_132013,K222,77,71,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-07-16,20260916_132025,K222,77,74,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,3.0
-AK_train_2026-07-17,20260916_132035,K222,84,77,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-07-18,20260916_132046,K222,81,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-07-19,20260916_132058,K222,78,72,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-07-20,20260916_132109,K222,75,67,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,8.0
-AK_train_2026-07-21,20260916_132120,K222,76,69,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-07-22,20260916_132131,K222,83,78,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0
-AK_train_2026-07-23,20260916_132142,K222,83,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,8.0
-AK_train_2026-07-24,20260916_132153,K222,81,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-07-25,20260916_132203,K222,73,69,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,4.0
-AK_train_2026-07-26,20260916_132213,K222,81,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-07-27,20260916_132224,K222,84,77,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-07-28,20260916_132234,K222,75,69,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-07-29,20260916_132244,K222,82,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-07-30,20260916_132256,K222,78,72,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-07-31,20260916_132305,K222,78,71,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-08-01,20260916_132316,K222,82,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-08-02,20260916_132326,K222,77,73,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,4.0
-AK_train_2026-08-03,20260916_132337,K222,81,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-08-04,20260916_132348,K222,78,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,3.0
-AK_train_2026-08-05,20260916_132359,K222,74,69,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0
-AK_train_2026-08-06,20260916_132409,K222,75,70,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0
-AK_train_2026-08-07,20260916_132420,K222,72,68,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,4.0
-AK_train_2026-08-08,20260916_132430,K222,81,73,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,8.0
-AK_train_2026-08-09,20260916_132440,K222,81,73,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,8.0
-AK_train_2026-08-10,20260916_132450,K222,77,70,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-08-11,20260916_132704,K222,79,72,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-08-12,20260916_132916,K222,6,3,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,3.0
-AK_train_2026-08-13,20260916_132928,K222,77,73,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,4.0
-AK_train_2026-08-14,20260916_132940,K222,74,70,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,4.0
-AK_train_2026-08-15,20260916_132953,K222,83,76,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-08-16,20260916_133004,K222,78,71,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-08-17,20260916_133015,K222,81,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-08-18,20260916_133026,K222,78,74,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,4.0
-AK_train_2026-08-19,20260916_133037,K222,78,71,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-08-20,20260916_133048,K222,76,71,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0
-AK_train_2026-08-21,20260916_133058,K222,75,70,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0
-AK_train_2026-08-22,20260916_133108,K222,83,76,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-08-23,20260916_133119,K222,76,69,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-08-24,20260916_133130,K222,79,77,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,2.0
-AK_train_2026-08-25,20260916_133141,K222,73,70,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,3.0
-AK_train_2026-08-26,20260916_133153,K222,74,69,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0
-AK_train_2026-08-27,20260916_133203,K222,79,73,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-08-28,20260916_133214,K222,78,72,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-08-29,20260916_133225,K222,80,73,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-08-30,20260916_133235,K222,82,76,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-08-31,20260916_133246,K222,84,77,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-09-01,20260916_133258,K222,83,77,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-09-02,20260916_133310,K222,76,69,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-09-03,20260916_133323,K222,74,70,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,4.0
-AK_train_2026-09-04,20260916_133336,K222,76,69,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-09-05,20260916_133348,K222,84,77,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-09-06,20260916_133400,K222,81,72,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,9.0
-AK_train_2026-09-07,20260916_133412,K222,83,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,8.0
-AK_train_2026-09-08,20260916_133424,K222,80,74,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-09-09,20260916_133437,K222,83,76,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-09-10,20260916_133449,K222,79,72,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_2026-09-11,20260916_133502,K222,84,72,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,12.0
-AK_train_2026-09-12,20260916_133513,K222,76,70,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AK_train_2026-09-13,20260916_133525,K222,86,78,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,8.0
-AK_train_full_2026-09-09,20260914_130547,K222,1235,1228,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0
-AK_train_full_2026-09-12,20260914_130559,K222,1239,1233,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0
-AM_aircraft_2026-08-17,20260916_123449,R9286 RFD97,159,128,31.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-08-18,20260916_123558,R9286 RFD97,154,121,33.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-08-19,20260916_123710,R9286 RFD97,156,123,33.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-08-20,20260916_123817,R9286 RFD97,185,116,69.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-08-21,20260916_123924,R9286 RFD97,177,116,61.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-08-22,20260916_124032,R9286 RFD97,143,126,17.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-08-23,20260916_124143,R9286 RFD97,131,125,6.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-08-24,20260916_124307,R9286 RFD97,173,117,56.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-08-25,20260916_124436,R9286 RFD97,246,129,117.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-08-26,20260916_124546,R9286 RFD97,165,121,44.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-08-27,20260916_124655,R9286 RFD97,159,120,39.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-08-28,20260916_124805,R9286 RFD97,149,124,25.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-08-29,20260916_124911,R9286 RFD97,141,116,25.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-08-30,20260916_125018,R9286 RFD97,167,120,47.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-08-31,20260916_125137,R9286 RFD97,142,121,21.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-09-01,20260916_125247,R9286 RFD97,141,126,15.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-09-02,20260916_125355,R9286 RFD97,161,122,39.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-09-03,20260916_125505,R9286 RFD97,139,117,22.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-09-04,20260916_125612,R9286 RFD97,148,124,24.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-09-05,20260916_125721,R9286 RFD97,140,120,20.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-09-06,20260916_125834,R9286 RFD97,140,134,6.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-09-07,20260916_130057,R9286 RFD97,182,116,66.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-09-08,20260916_130210,R9286 RFD97,135,133,2.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-09-09,20260916_130319,R9286 RFD97,175,111,64.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-09-10,20260916_130439,R9286 RFD97,154,131,23.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-09-11,20260916_130550,R9286 RFD97,161,122,39.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-09-12,20260916_130658,R9286 RFD97,149,128,21.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_aircraft_2026-09-13,20260916_130806,R9286 RFD97,137,123,14.0,"rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",,
-AM_romig_traffic_2026-09-09,20260914_130103,R1796 R3130,1884,432,,timeofday:America/Anchorage:day7-19:night1-5 | timeofday:America/Anchorage:day7-19:night1-5+burst>=20x,1452.0,
-AM_romig_traffic_2026-09-12,20260914_130342,R1796 R3130,1879,436,,timeofday:America/Anchorage:day7-19:night1-5 | timeofday:America/Anchorage:day7-19:night1-5+burst>=20x,1443.0,
-AM_traffic_2026-09-07,20260916_134209,R1796 R3130 R4017 R9EA1 RF528,2198,1105,,timeofday:America/Anchorage:day7-19:night1-5 | timeofday:America/Anchorage:day7-19:night1-5+burst>=20x,1093.0,
-AM_traffic_2026-09-08,20260916_134821,R1796 R2A1A R3130 R4017 R9EA1 RF528,2701,1377,,timeofday:America/Anchorage:day7-19:night1-5 | timeofday:America/Anchorage:day7-19:night1-5+burst>=20x,1324.0,
-AM_traffic_2026-09-09,20260916_135437,R1796 R2A1A R3130 R4017 R9EA1 RF528,2669,1356,,timeofday:America/Anchorage:day7-19:night1-5 | timeofday:America/Anchorage:day7-19:night1-5+burst>=20x,1313.0,
-AM_traffic_2026-09-10,20260916_140041,R1796 R2A1A R3130 R4017 R9EA1 RF528,2688,1361,,timeofday:America/Anchorage:day7-19:night1-5 | timeofday:America/Anchorage:day7-19:night1-5+burst>=20x,1327.0,
-AM_traffic_2026-09-11,20260916_140642,R1796 R2A1A R3130 R4017 R9EA1 RF528,2680,1381,,timeofday:America/Anchorage:day7-19:night1-5 | timeofday:America/Anchorage:day7-19:night1-5+burst>=20x,1299.0,
-AM_traffic_2026-09-12,20260916_141229,R1796 R3130 R4017,1317,662,,timeofday:America/Anchorage:day7-19:night1-5 | timeofday:America/Anchorage:day7-19:night1-5+burst>=20x,655.0,
-AM_traffic_2026-09-13,20260916_141811,R1796 R3130 R4017,1325,672,,timeofday:America/Anchorage:day7-19:night1-5 | timeofday:America/Anchorage:day7-19:night1-5+burst>=20x,653.0,
+prefix,stamp,stations,windows,n_noise,n_aircraft,label_methods,n_traffic,n_train,n_earthquake
+AK,20260916_142515,FIRE RC01 SSN,1950,926,,comcat:p_pick | comcat:pre_p_noise,,,1024.0
+AK_k222_all_2026-09-09,20260914_125735,K222,1367,1367,,all,,,
+AK_k222_all_2026-09-12,20260914_125747,K222,1369,1369,,all,,,
+AK_quiet_2026-08-18,20261022_111243,K220,923,923,,"all | all,day_noise:5-24:<=1.5x_night",,,
+AK_quiet_2026-08-23,20261022_111304,K220,684,684,,"all | all,day_noise:5-24:<=1.5x_night",,,
+AK_quiet_2026-08-27,20261022_111323,K220,817,817,,"all | all,day_noise:5-24:<=1.5x_night",,,
+AK_quiet_2026-09-01,20261022_111342,K220,853,853,,"all | all,day_noise:5-24:<=1.5x_night",,,
+AK_quiet_2026-09-06,20261022_111401,K220,973,973,,"all | all,day_noise:5-24:<=1.5x_night",,,
+AK_quiet_2026-09-10,20261022_111421,K220,840,840,,"all | all,day_noise:5-24:<=1.5x_night",,,
+AK_train_2026-05-15,20261022_111237,K222,120,72,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",47.0,1.0,
+AK_train_2026-05-16,20261022_111252,K222,155,107,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",40.0,8.0,
+AK_train_2026-05-17,20261022_111308,K222,159,124,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",30.0,5.0,
+AK_train_2026-05-18,20261022_111323,K222,122,83,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",35.0,4.0,
+AK_train_2026-05-19,20261022_111337,K222,194,145,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",45.0,4.0,
+AK_train_2026-05-20,20261022_111351,K222,117,71,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",38.0,8.0,
+AK_train_2026-05-21,20261022_111406,K222,108,71,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",35.0,2.0,
+AK_train_2026-05-22,20261022_111422,K222,139,92,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",43.0,4.0,
+AK_train_2026-05-23,20261022_111437,K222,154,114,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",32.0,8.0,
+AK_train_2026-05-24,20261022_111452,K222,146,106,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",33.0,7.0,
+AK_train_2026-05-25,20261022_111506,K222,131,84,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",39.0,8.0,
+AK_train_2026-05-26,20261022_111521,K222,108,71,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",30.0,7.0,
+AK_train_2026-05-27,20261022_111537,K222,122,69,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",46.0,7.0,
+AK_train_2026-05-28,20261022_111552,K222,117,69,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",42.0,6.0,
+AK_train_2026-05-29,20261022_111606,K222,117,79,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",33.0,5.0,
+AK_train_2026-05-30,20261022_111621,K222,141,92,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",42.0,7.0,
+AK_train_2026-05-31,20261022_111635,K222,156,110,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",39.0,7.0,
+AK_train_2026-06-01,20261022_111649,K222,102,72,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",26.0,4.0,
+AK_train_2026-06-02,20261022_111704,K222,105,59,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",38.0,8.0,
+AK_train_2026-06-03,20261022_111720,K222,112,69,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",35.0,8.0,
+AK_train_2026-06-04,20261022_111734,K222,133,89,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",38.0,6.0,
+AK_train_2026-06-05,20261022_111749,K222,119,80,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",34.0,5.0,
+AK_train_2026-06-06,20261022_111803,K222,158,107,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",44.0,7.0,
+AK_train_2026-06-07,20261022_111817,K222,136,99,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",30.0,7.0,
+AK_train_2026-06-08,20261022_111832,K222,123,68,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",50.0,5.0,
+AK_train_2026-06-09,20261022_111848,K222,115,69,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",36.0,10.0,
+AK_train_2026-06-10,20261022_111903,K222,122,68,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",50.0,4.0,
+AK_train_2026-06-11,20261022_111917,K222,107,62,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",37.0,8.0,
+AK_train_2026-06-12,20261022_111932,K222,101,66,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",28.0,7.0,
+AK_train_2026-06-13,20261022_111946,K222,139,100,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",33.0,6.0,
+AK_train_2026-06-14,20261022_112102,K222,148,103,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",40.0,5.0,
+AK_train_2026-06-15,20261022_112118,K222,127,84,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",36.0,7.0,
+AK_train_2026-06-16,20261022_112133,K222,115,71,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",38.0,6.0,
+AK_train_2026-06-17,20261022_112149,K222,91,56,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",29.0,6.0,
+AK_train_2026-06-18,20261022_112203,K222,115,66,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",43.0,6.0,
+AK_train_2026-06-19,20261022_112217,K222,123,79,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",39.0,5.0,
+AK_train_2026-06-20,20261022_112232,K222,123,75,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",42.0,6.0,
+AK_train_2026-06-21,20261022_112246,K222,138,94,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",38.0,6.0,
+AK_train_2026-06-22,20261022_112300,K222,105,70,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",30.0,5.0,
+AK_train_2026-06-23,20261022_112314,K222,138,98,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",36.0,4.0,
+AK_train_2026-06-24,20261022_112329,K222,130,89,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",34.0,7.0,
+AK_train_2026-06-25,20261022_112345,K222,126,84,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",37.0,5.0,
+AK_train_2026-06-26,20261022_112400,K222,110,70,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",34.0,6.0,
+AK_train_2026-06-27,20261022_112414,K222,193,151,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",35.0,7.0,
+AK_train_2026-06-28,20261022_112429,K222,156,110,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",39.0,7.0,
+AK_train_2026-06-29,20261022_112443,K222,114,73,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",38.0,3.0,
+AK_train_2026-06-30,20261022_112458,K222,97,62,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",29.0,6.0,
+AK_train_2026-07-01,20261022_112513,K222,113,69,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",40.0,4.0,
+AK_train_2026-07-02,20261022_112527,K222,112,77,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",30.0,5.0,
+AK_train_2026-07-03,20261022_112543,K222,147,97,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",45.0,5.0,
+AK_train_2026-07-04,20261022_112559,K222,132,95,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",32.0,5.0,
+AK_train_2026-07-05,20261022_112615,K222,163,112,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",45.0,6.0,
+AK_train_2026-07-06,20261022_112630,K222,121,73,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",42.0,6.0,
+AK_train_2026-07-07,20261022_112647,K222,120,74,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",40.0,6.0,
+AK_train_2026-07-08,20261022_112702,K222,122,77,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",40.0,5.0,
+AK_train_2026-07-09,20261022_112716,K222,110,63,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",42.0,5.0,
+AK_train_2026-07-10,20261022_112730,K222,126,84,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",35.0,7.0,
+AK_train_2026-07-11,20261022_112745,K222,124,81,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",37.0,6.0,
+AK_train_2026-07-12,20261022_112801,K222,147,92,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",49.0,6.0,
+AK_train_2026-07-13,20261022_112815,K222,108,61,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",35.0,12.0,
+AK_train_2026-07-14,20261022_112830,K222,120,78,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",37.0,5.0,
+AK_train_2026-07-15,20261022_112846,K222,104,54,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",44.0,6.0,
+AK_train_2026-07-16,20261022_112900,K222,122,81,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",38.0,3.0,
+AK_train_2026-07-17,20261022_112915,K222,142,92,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",43.0,7.0,
+AK_train_2026-07-18,20261022_112930,K222,124,89,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",29.0,6.0,
+AK_train_2026-07-19,20261022_112944,K222,180,138,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",36.0,6.0,
+AK_train_2026-07-20,20261022_112959,K222,103,62,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",33.0,8.0,
+AK_train_2026-07-21,20261022_113014,K222,105,64,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",34.0,7.0,
+AK_train_2026-07-22,20261022_113028,K222,109,65,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",39.0,5.0,
+AK_train_2026-07-23,20261022_113045,K222,140,100,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",32.0,8.0,
+AK_train_2026-07-24,20261022_113100,K222,128,73,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",49.0,6.0,
+AK_train_2026-07-25,20261022_113115,K222,121,85,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",32.0,4.0,
+AK_train_2026-07-26,20261022_113129,K222,164,113,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",45.0,6.0,
+AK_train_2026-07-27,20261022_113144,K222,125,68,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",50.0,7.0,
+AK_train_2026-07-28,20261022_113159,K222,112,62,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",44.0,6.0,
+AK_train_2026-07-29,20261022_113213,K222,110,68,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",35.0,7.0,
+AK_train_2026-07-30,20261022_113228,K222,102,65,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",31.0,6.0,
+AK_train_2026-07-31,20261022_113241,K222,103,69,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",27.0,7.0,
+AK_train_2026-08-01,20261022_113255,K222,125,81,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",37.0,7.0,
+AK_train_2026-08-02,20261022_113310,K222,138,101,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",33.0,4.0,
+AK_train_2026-08-03,20261022_113325,K222,122,79,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",37.0,6.0,
+AK_train_2026-08-04,20261022_113342,K222,121,82,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",36.0,3.0,
+AK_train_2026-08-05,20261022_113357,K222,106,68,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",33.0,5.0,
+AK_train_2026-08-06,20261022_113413,K222,105,50,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",50.0,5.0,
+AK_train_2026-08-07,20261022_113429,K222,129,85,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",40.0,4.0,
+AK_train_2026-08-08,20261022_113444,K222,131,88,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",35.0,8.0,
+AK_train_2026-08-09,20261022_113458,K222,140,100,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",32.0,8.0,
+AK_train_2026-08-10,20261022_113514,K222,110,72,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",31.0,7.0,
+AK_train_2026-08-11,20261022_113728,K222,97,66,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",24.0,7.0,
+AK_train_2026-08-12,20261022_113941,K222,38,8,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",27.0,3.0,
+AK_train_2026-08-13,20261022_113955,K222,112,71,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",37.0,4.0,
+AK_train_2026-08-14,20261022_114010,K222,105,63,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",38.0,4.0,
+AK_train_2026-08-15,20261022_114024,K222,132,81,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",44.0,7.0,
+AK_train_2026-08-16,20261022_114039,K222,124,83,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",34.0,7.0,
+AK_train_2026-08-17,20261022_114055,K222,142,94,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",42.0,6.0,
+AK_train_2026-08-18,20261022_114108,K222,120,74,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",42.0,4.0,
+AK_train_2026-08-19,20261022_114124,K222,127,70,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",50.0,7.0,
+AK_train_2026-08-20,20261022_114139,K222,99,64,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",30.0,5.0,
+AK_train_2026-08-21,20261022_114153,K222,110,66,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",39.0,5.0,
+AK_train_2026-08-22,20261022_114208,K222,138,93,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",38.0,7.0,
+AK_train_2026-08-23,20261022_114222,K222,139,100,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",32.0,7.0,
+AK_train_2026-08-24,20261022_114237,K222,105,70,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",33.0,2.0,
+AK_train_2026-08-25,20261022_114251,K222,105,68,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",34.0,3.0,
+AK_train_2026-08-26,20261022_114306,K222,108,57,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",46.0,5.0,
+AK_train_2026-08-27,20261022_114321,K222,112,71,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",35.0,6.0,
+AK_train_2026-08-28,20261022_114336,K222,104,64,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",34.0,6.0,
+AK_train_2026-08-29,20261022_114350,K222,139,91,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",41.0,7.0,
+AK_train_2026-08-30,20261022_114406,K222,142,106,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",30.0,6.0,
+AK_train_2026-08-31,20261022_114420,K222,114,63,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",44.0,7.0,
+AK_train_2026-09-01,20261022_114435,K222,106,68,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",32.0,6.0,
+AK_train_2026-09-02,20261022_114450,K222,118,79,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",32.0,7.0,
+AK_train_2026-09-03,20261022_114506,K222,104,67,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",33.0,4.0,
+AK_train_2026-09-04,20261022_114523,K222,122,78,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",37.0,7.0,
+AK_train_2026-09-05,20261022_114538,K222,145,93,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",45.0,7.0,
+AK_train_2026-09-06,20261022_114554,K222,145,95,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",41.0,9.0,
+AK_train_2026-09-07,20261022_114609,K222,153,108,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",37.0,8.0,
+AK_train_2026-09-08,20261022_114624,K222,115,77,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",32.0,6.0,
+AK_train_2026-09-09,20261022_114640,K222,149,105,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",37.0,7.0,
+AK_train_2026-09-10,20261022_114655,K222,134,91,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",36.0,7.0,
+AK_train_2026-09-11,20261022_114711,K222,116,68,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",36.0,12.0,
+AK_train_2026-09-12,20261022_114725,K222,178,125,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",47.0,6.0,
+AK_train_2026-09-13,20261022_114739,K222,141,101,,"day_label:America/Anchorage:6-23:<=1.5x_local | events:arr_summer_2026.csv | events:arr_summer_2026.csv,day_noise:6-23:<=1.5x_night | events:search900s,rms>=3x",32.0,8.0,
+AK_train_full_2026-09-09,20260914_130547,K222,1235,1228,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0,
+AK_train_full_2026-09-12,20260914_130559,K222,1239,1233,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0,
+AK_trainnorth_2026-05-15,20261023_155745,K217 MS01,141,131,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,10.0,
+AK_trainnorth_2026-05-16,20261023_155834,K217 MS01,151,145,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0,
+AK_trainnorth_2026-05-17,20261023_155924,K217 MS01,152,143,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,9.0,
+AK_trainnorth_2026-05-18,20261023_160014,K217 MS01,156,148,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,8.0,
+AK_trainnorth_2026-05-19,20261023_160104,K217 MS01,132,129,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,3.0,
+AK_trainnorth_2026-05-20,20261023_160153,K217 MS01,135,133,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,2.0,
+AK_trainnorth_2026-05-21,20261023_160241,K217 MS01,126,125,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-05-22,20261023_160320,K217 MS01,127,124,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,3.0,
+AK_trainnorth_2026-05-23,20261023_160359,K217 MS01,158,152,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0,
+AK_trainnorth_2026-05-24,20261023_160451,K217 MS01,149,142,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0,
+AK_trainnorth_2026-05-25,20261023_160541,K217 MS01,122,118,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,4.0,
+AK_trainnorth_2026-05-26,20261023_160631,K217 MS01,140,134,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0,
+AK_trainnorth_2026-05-27,20261023_160721,K217 MS01,148,142,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0,
+AK_trainnorth_2026-05-28,20261023_160812,K217 MS01,135,131,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,4.0,
+AK_trainnorth_2026-05-29,20261023_160902,K217 MS01,147,144,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,3.0,
+AK_trainnorth_2026-05-30,20261023_160953,K217 MS01,138,136,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,2.0,
+AK_trainnorth_2026-05-31,20261023_161043,K217 MS01,152,145,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0,
+AK_trainnorth_2026-06-01,20261023_161133,K217 MS01,118,116,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,2.0,
+AK_trainnorth_2026-06-02,20261023_161224,K217 MS01,126,123,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,3.0,
+AK_trainnorth_2026-06-03,20261023_161314,K217 MS01,137,135,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,2.0,
+AK_trainnorth_2026-06-04,20261023_161403,K217 MS01,151,146,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0,
+AK_trainnorth_2026-06-05,20261023_161453,K217 MS01,142,140,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,2.0,
+AK_trainnorth_2026-06-06,20261023_161544,K217 MS01,148,143,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0,
+AK_trainnorth_2026-06-07,20261023_161634,K217 MS01,139,136,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,3.0,
+AK_trainnorth_2026-06-08,20261023_161722,K217 MS01,140,139,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-06-09,20261023_161810,K217 MS01,153,148,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,5.0,
+AK_trainnorth_2026-06-10,20261023_161854,K217 MS01,156,148,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,8.0,
+AK_trainnorth_2026-06-11,20261023_161936,K217 MS01,147,145,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,2.0,
+AK_trainnorth_2026-06-12,20261023_162019,K217 MS01,127,117,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,10.0,
+AK_trainnorth_2026-06-13,20261023_162100,K217 MS01,128,125,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,3.0,
+AK_trainnorth_2026-06-14,20261023_162143,K217 MS01,155,153,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,2.0,
+AK_trainnorth_2026-06-15,20261023_162224,K217 MS01,147,140,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0,
+AK_trainnorth_2026-06-16,20261023_162307,K217 MS01,132,128,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,4.0,
+AK_trainnorth_2026-06-17,20261023_162350,K217 MS01,149,142,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0,
+AK_trainnorth_2026-06-18,20261023_162432,K217 MS01,142,132,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,10.0,
+AK_trainnorth_2026-06-19,20261023_162514,K217 MS01,156,145,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,11.0,
+AK_trainnorth_2026-06-20,20261023_162556,K217 MS01,146,138,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,8.0,
+AK_trainnorth_2026-06-21,20261023_162637,K217 MS01,142,140,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,2.0,
+AK_trainnorth_2026-06-22,20261023_162722,K217 MS01,161,152,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,9.0,
+AK_trainnorth_2026-06-23,20261023_162807,K217 MS01,166,159,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0,
+AK_trainnorth_2026-06-24,20261023_162851,K217 MS01,150,141,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,9.0,
+AK_trainnorth_2026-06-25,20261023_163016,K217 MS01,75,74,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-06-26,20261023_163042,MS01,68,66,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,2.0,
+AK_trainnorth_2026-06-27,20261023_163106,MS01,81,79,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,2.0,
+AK_trainnorth_2026-06-28,20261023_163129,MS01,69,68,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-06-29,20261023_163151,MS01,72,72,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-06-30,20261023_163214,MS01,70,69,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-07-01,20261023_163239,MS01,72,66,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,6.0,
+AK_trainnorth_2026-07-02,20261023_163303,MS01,65,65,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-07-03,20261023_163324,MS01,70,70,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-07-04,20261023_163347,MS01,75,74,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-07-05,20261023_163410,MS01,73,72,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-07-06,20261023_163435,MS01,66,65,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-07-07,20261023_163502,MS01,83,76,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,7.0,
+AK_trainnorth_2026-07-08,20261023_163524,MS01,71,71,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-07-09,20261023_163545,MS01,67,66,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-07-10,20261023_163607,MS01,80,79,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-07-11,20261023_163628,MS01,76,76,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-07-12,20261023_163649,MS01,67,66,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-07-13,20261023_163711,MS01,61,60,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-07-14,20261023_163732,MS01,77,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,2.0,
+AK_trainnorth_2026-07-15,20261023_163754,MS01,58,57,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-07-16,20261023_163816,MS01,81,79,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,2.0,
+AK_trainnorth_2026-07-17,20261023_163838,MS01,72,71,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-07-18,20261023_163904,MS01,81,81,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-07-19,20261023_163931,MS01,81,81,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-07-20,20261023_163958,MS01,61,60,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-07-21,20261023_164024,MS01,67,67,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-07-22,20261023_164050,MS01,67,67,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-07-23,20261023_164116,MS01,89,88,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-07-24,20261023_164142,MS01,57,57,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-07-25,20261023_164208,MS01,70,69,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-07-26,20261023_164235,MS01,75,75,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-07-27,20261023_164301,MS01,61,61,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-07-28,20261023_164326,MS01,68,66,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,2.0,
+AK_trainnorth_2026-07-29,20261023_164352,MS01,71,71,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-07-30,20261023_164416,MS01,68,68,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-07-31,20261023_164440,MS01,74,73,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-08-01,20261023_164504,MS01,66,66,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-08-02,20261023_164534,MS01,73,72,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-08-03,20261023_164558,MS01,60,60,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-08-05,20261023_164645,MS01,73,73,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-08-06,20261023_164710,MS01,66,63,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,3.0,
+AK_trainnorth_2026-08-07,20261023_164735,MS01,84,84,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-08-08,20261023_164800,MS01,77,77,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-08-09,20261023_164828,MS01,72,72,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-08-10,20261023_164856,MS01,72,72,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-08-11,20261023_164918,MS01,69,68,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-08-12,20261023_164938,MS01,67,67,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-08-13,20261023_165000,MS01,76,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-08-14,20261023_165022,MS01,70,69,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-08-15,20261023_165046,MS01,76,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-08-16,20261023_165114,MS01,70,69,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-08-17,20261023_165143,MS01,74,74,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-08-18,20261023_165211,MS01,75,73,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,2.0,
+AK_trainnorth_2026-08-19,20261023_165239,MS01,79,77,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,2.0,
+AK_trainnorth_2026-08-20,20261023_165303,MS01,63,62,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-08-21,20261023_165328,MS01,70,70,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-08-22,20261023_165354,MS01,74,73,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-08-23,20261023_165422,MS01,76,75,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-08-24,20261023_165446,MS01,62,61,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-08-25,20261023_165511,MS01,71,70,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-08-26,20261023_165537,MS01,64,61,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,3.0,
+AK_trainnorth_2026-08-27,20261023_165601,MS01,73,72,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-08-28,20261023_165626,MS01,67,66,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-08-29,20261023_165649,MS01,71,68,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,3.0,
+AK_trainnorth_2026-08-30,20261023_165713,MS01,75,75,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-08-31,20261023_165737,MS01,62,61,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-09-01,20261023_165802,MS01,54,52,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,2.0,
+AK_trainnorth_2026-09-02,20261023_165829,MS01,68,67,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-09-03,20261023_165857,MS01,54,53,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-09-04,20261023_165923,MS01,62,62,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-09-05,20261023_165949,MS01,74,74,,events:arr_summer_2026.csv,,,
+AK_trainnorth_2026-09-06,20261023_170013,MS01,72,71,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-09-07,20261023_170037,MS01,70,69,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-09-08,20261023_170104,MS01,68,67,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-09-09,20261023_170132,MS01,69,67,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,2.0,
+AK_trainnorth_2026-09-10,20261023_170207,MS01,61,59,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,2.0,
+AK_trainnorth_2026-09-11,20261023_170235,MS01,67,66,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AK_trainnorth_2026-09-12,20261023_170300,MS01,83,81,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,2.0,
+AK_trainnorth_2026-09-13,20261023_170327,MS01,77,76,,"events:arr_summer_2026.csv | events:search900s,rms>=3x",,1.0,
+AM_aircraft_2026-08-17,20261022_111332,R9286 RFD97,258,99,31.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",128.0,,
+AM_aircraft_2026-08-18,20261022_111441,R9286 RFD97,183,38,33.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",112.0,,
+AM_aircraft_2026-08-19,20261022_111549,R9286 RFD97,219,51,33.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",135.0,,
+AM_aircraft_2026-08-20,20261022_111656,R9286 RFD97,269,92,69.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",108.0,,
+AM_aircraft_2026-08-21,20261022_111803,R9286 RFD97,265,65,61.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",139.0,,
+AM_aircraft_2026-08-22,20261022_111911,R9286 RFD97,200,69,17.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",114.0,,
+AM_aircraft_2026-08-23,20261022_112022,R9286 RFD97,221,107,6.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2 | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2,day_noise:7-19:<=1.5x_night,clear9",108.0,,
+AM_aircraft_2026-08-24,20261022_112132,R9286 RFD97,253,84,56.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",113.0,,
+AM_aircraft_2026-08-25,20261022_112243,R9286 RFD97,331,100,117.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",114.0,,
+AM_aircraft_2026-08-26,20261022_112408,R9286 RFD97,274,124,44.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",106.0,,
+AM_aircraft_2026-08-27,20261022_112516,R9286 RFD97,260,109,39.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",112.0,,
+AM_aircraft_2026-08-28,20261022_112629,R9286 RFD97,238,72,25.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",141.0,,
+AM_aircraft_2026-08-29,20261022_112737,R9286 RFD97,210,74,25.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",111.0,,
+AM_aircraft_2026-08-30,20261022_112855,R9286 RFD97,241,77,47.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",117.0,,
+AM_aircraft_2026-08-31,20261022_113006,R9286 RFD97,219,78,21.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",120.0,,
+AM_aircraft_2026-09-01,20261022_113115,R9286 RFD97,217,97,15.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",105.0,,
+AM_aircraft_2026-09-02,20261022_113311,R9286 RFD97,230,71,39.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",120.0,,
+AM_aircraft_2026-09-03,20261022_113424,R9286 RFD97,225,86,22.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",117.0,,
+AM_aircraft_2026-09-04,20261022_113532,R9286 RFD97,180,44,24.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",112.0,,
+AM_aircraft_2026-09-05,20261022_113640,R9286 RFD97,249,98,20.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2 | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2,day_noise:7-19:<=1.5x_night,clear9",131.0,,
+AM_aircraft_2026-09-06,20261022_113802,R9286 RFD97,225,91,6.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2 | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2,day_noise:7-19:<=1.5x_night,clear9",128.0,,
+AM_aircraft_2026-09-07,20261022_114026,R9286 RFD97,226,51,66.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2 | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2,day_noise:7-19:<=1.5x_night,clear9",109.0,,
+AM_aircraft_2026-09-08,20261022_114138,R9286 RFD97,237,113,2.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",122.0,,
+AM_aircraft_2026-09-09,20261022_114247,R9286 RFD97,274,86,64.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",124.0,,
+AM_aircraft_2026-09-10,20261022_114357,R9286 RFD97,256,123,23.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",110.0,,
+AM_aircraft_2026-09-11,20261022_114507,R9286 RFD97,265,107,39.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",119.0,,
+AM_aircraft_2026-09-12,20261022_114615,R9286 RFD97,261,87,21.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2",153.0,,
+AM_aircraft_2026-09-13,20261022_114723,R9286 RFD97,231,95,14.0,"day_label:America/Anchorage:7-19:<=1.5x_local | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2 | rule:rms20-45Hz>=2.5xlocal15min,active>=15s,coincident>=2,day_noise:7-19:<=1.5x_night,clear9",122.0,,
+AM_romig_traffic_2026-09-09,20260916_141324,R1796 R3130,1884,432,,timeofday:America/Anchorage:day7-19:night1-5 | timeofday:America/Anchorage:day7-19:night1-5+burst>=20x,1452.0,,
+AM_romig_traffic_2026-09-12,20260916_141447,R1796 R3130,1879,436,,timeofday:America/Anchorage:day7-19:night1-5 | timeofday:America/Anchorage:day7-19:night1-5+burst>=20x,1443.0,,
+AM_traffic_2026-09-07,20260930_100125,R1796 R3130 R4017 R9EA1 RF528,2198,1105,,timeofday:America/Anchorage:day7-19:night1-5 | timeofday:America/Anchorage:day7-19:night1-5+burst>=20x,1093.0,,
+AM_traffic_2026-09-08,20260930_100730,R1796 R2A1A R3130 R4017 R9EA1 RF528,2700,1377,,timeofday:America/Anchorage:day7-19:night1-5 | timeofday:America/Anchorage:day7-19:night1-5+burst>=20x,1323.0,,
+AM_traffic_2026-09-09,20260930_101331,R1796 R2A1A R3130 R4017 R9EA1 RF528,2669,1356,,timeofday:America/Anchorage:day7-19:night1-5 | timeofday:America/Anchorage:day7-19:night1-5+burst>=20x,1313.0,,
+AM_traffic_2026-09-10,20260930_101948,R1796 R2A1A R3130 R4017 R9EA1 RF528,2688,1361,,timeofday:America/Anchorage:day7-19:night1-5 | timeofday:America/Anchorage:day7-19:night1-5+burst>=20x,1327.0,,
+AM_traffic_2026-09-11,20260930_102558,R1796 R2A1A R3130 R4017 R9EA1 RF528,2680,1381,,timeofday:America/Anchorage:day7-19:night1-5 | timeofday:America/Anchorage:day7-19:night1-5+burst>=20x,1299.0,,
+AM_traffic_2026-09-12,20260930_103203,R1796 R3130 R4017,1317,662,,timeofday:America/Anchorage:day7-19:night1-5 | timeofday:America/Anchorage:day7-19:night1-5+burst>=20x,655.0,,
+AM_traffic_2026-09-13,20260930_103754,R1796 R3130 R4017,1325,672,,timeofday:America/Anchorage:day7-19:night1-5 | timeofday:America/Anchorage:day7-19:night1-5+burst>=20x,653.0,,

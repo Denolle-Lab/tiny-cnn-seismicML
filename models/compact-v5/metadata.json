@@ -7,5 +7,19 @@
   "window_duration": 60,
   "instrument_types": ["H", "N"],
   "weightsUrl": "./weights.json",
-  "test_accuracy": 0.9917
+  "test_accuracy": 0.996,
+  "preprocessing": {
+    "input_units": "counts (no instrument response removed)",
+    "detrend": ["linear", "demean"],
+    "taper": "Hann, 2 s at each end of a contiguous segment; windows within 2 s of an edge are skipped",
+    "resample": {"target_hz": 100, "method": "FFT with a Hann window in the frequency domain (obspy Trace.resample)", "anti_alias": "when downsampling: 40 Hz Butterworth low-pass, 4 corners, zero-phase, applied first"},
+    "bandpass": {"freqmin_hz": 2, "freqmax_hz": 20, "type": "Butterworth", "corners": 4, "zerophase": false, "applied": "after resampling, on the continuous trace before windowing"},
+    "window": {"samples": 6000, "duration_s": 60, "overlap": 0},
+    "normalization": "per window z-score: (x - mean) / (std + 1e-10)"
+  },
+  "training_data_notes": {
+    "continuous_sets": "only their Noise windows are used (AM traffic, train, north-line train, aircraft and quiet sets): AM EHZ 100 Hz and AK HNZ 200 Hz; preprocessing as above; windows containing a gap are dropped",
+    "ak_earthquake_set": "AK BHZ 50 Hz: 5% taper of a 200 s request, filtered at 50 Hz then upsampled to 100 Hz (no energy above 25 Hz); gaps filled by linear interpolation; Earthquake windows 120 s, two 60 s crops each (one containing P, one anywhere)",
+    "augmentation": "training split only: Gaussian noise sigma 0.02, circular shift up to +/-25 samples, amplitude x0.9-1.1"
+  }
 }

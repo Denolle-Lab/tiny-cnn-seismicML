@@ -1,0 +1,54 @@
+Seismic CNN Training Summary - COMPACT Model
+============================================================
+
+Date: 2026-10-26 14:30:39
+
+Model Configuration:
+  Model id: compact-v6
+  Checkpoint: seismic_cnn_compact_ak_20261026_142620.pth
+  Type: compact
+  Parameters: 9,282
+  Input shape: (batch, 1, 6000)
+  Number of classes: 2
+
+Training Configuration:
+  Epochs: 60
+  Batch size: 32
+  Learning rates: {'compact': 0.0005, 'standard': 0.0004}
+  Weight decay: 0.001
+
+Provenance:
+  data_source: ak
+  extra_sources: ['AM_traffic_*', 'AK_train_*', 'AK_trainnorth_*', 'AM_aircraft_*', 'AK_quiet_*']
+  model_classes_key: ['Noise', 'Traffic']
+  noise_max_per_station: 150
+  noise_match_traffic: True
+  traffic_max_per_station: 300
+  n_onset_crops: 1
+  n_free_crops: 1
+  split_method: StratifiedGroupKFold by event_id (AK events) or station + local day, seed 42
+  split_manifest: datasets/splits/split_20261026_142356.csv
+  split_sizes: {'train': 4663, 'val': 1070, 'test': 567}
+  git_commit: 030288b26d13237ace5827cc4b95832a77c0afc5
+  git_dirty: True
+
+Dataset Split:
+  Train: 4663 samples
+  Validation: 1070 samples
+  Test: 567 samples
+
+Results:
+  Best validation loss: 0.2830
+  Final train accuracy: 89.15%
+  Final val accuracy: 76.17%
+  Test accuracy: 85.89%
+
+Classification Report:
+              precision    recall  f1-score   support
+
+       Noise      0.883     0.867     0.875       323
+     Traffic      0.828     0.848     0.838       244
+
+    accuracy                          0.859       567
+   macro avg      0.856     0.858     0.857       567
+weighted avg      0.859     0.859     0.859       567

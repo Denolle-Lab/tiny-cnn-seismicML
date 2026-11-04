@@ -1,0 +1,33 @@
+# Daytime Noise away from the Train and Aircraft sites (Concord review,
+# 2026-10): with Noise only from 01-05 local, the hour alone could predict a
+# positive. Pull with
+#   python scripts/collect_continuous_windows.py --config configs/ak_quiet_stations.yaml
+#
+# AK.K220 (strong-motion, near ANC), 2026-09-09: daytime median 1.17x the
+# night level, 82% of day windows at most 1.5x it. PANC departures raise its
+# night 90th percentile by ~15% and are not seen by day, so no flight list:
+# at ~840 flights a day almost no daytime minute is clear of one by 90 s.
+# The 1.5x night test alone picks the quiet minutes; a faint departure under
+# it is no more visible on this sensor than the floor.
+
+stations:
+  - code: K220
+    network: AK
+    role: primary
+    sensors: strong-motion HNZ
+
+collection:
+  network: AK
+  roles: [primary]
+  class_name: Noise
+  label_from: all
+  exclude_events: true        # catalog earthquakes out
+  noise_hours: [1, 5]         # the night reference for the quiet test, kept as Noise too
+  noise_max_ratio: 3          # spikes 3x above the local median dropped
+  noise_keep: 0.5             # night only; the notebook caps Noise at 150 per station
+  day_label_hours: [5, 24]    # every hour outside the night reference gets the quiet test
+  day_noise_max_ratio: 1.5    # 2-20 Hz rms at most 1.5x the night Noise median
+  review_sheet: 0
+  tz: America/Anchorage
+  days: [2026-08-18, 2026-08-23, 2026-08-27, 2026-09-01, 2026-09-06, 2026-09-10]  # Tue, Sun, Thu x2
+  prefix_pattern: "AK_quiet_{date}"

@@ -44,8 +44,12 @@ trains:
 
 # Minutes from the depot time to the passage at each station, by direction.
 # Rough (yard speeds through town): the collector searches +/- 15 min anyway.
+# K217 and MS01 north from the 2026-10-23 site test: the Denali Star passed
+# K217 at 08:56-09:14 and MS01 at 09:51-10:10 local (May-Sept). Their evening
+# southbound passages are left out: the loudest minute near 20:00 wandered by
+# more than an hour from day to day, so a 3x burst there is usually not the train.
 station_offsets_min:
   south:         {K208: 9, R8F48: 9, S909E: 9, R6C15: 9, R1796: 8, K205: 8, K222: 30}
   south_arrival: {K208: -9, R8F48: -9, S909E: -9, R6C15: -9, R1796: -8, K205: -8, K222: -30}
-  north:         {K223: 3, K217: 35, MS01: 75}
-  north_arrival: {K223: -3, K217: -40, MS01: -105}
+  north:         {K223: 3, K217: 50, MS01: 103}
+  north_arrival: {K223: -3}

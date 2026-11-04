@@ -16,7 +16,7 @@ Small convolutional neural networks (CNNs) that classify 60 s of vertical ground
 1. **Collect** labeled 60 s windows from public seismic data (FDSN): AK network broadbands and strong-motion sensors through EarthScope/IRIS, and Raspberry Shake geophones (network AM) at Anchorage schools.
 2. **Label** every window with a rule that can be rerun, never by hand. Earthquakes come from USGS ComCat P picks, traffic from the time of day at school Shakes, trains from the Alaska Railroad timetable, and aircraft from high-frequency bursts seen at two Shakes near ANC runway 15/33.
 3. **Train** a compact (9.4k parameter) or standard (94k parameter) 1-D CNN on a subset of classes. The training, validation and test split is grouped by earthquake or by station-day.
-4. **Evaluate** on a held-out set of 485 windows recorded after every training date.
+4. **Evaluate** on a held-out set of 500 windows recorded after every training date.
 5. **Deploy** each model as a `models/<id>/` folder (`metadata.json` + TensorFlow.js `weights.json`) that a browser loads directly.
 
 | Label | Class | Data source | Status |
@@ -161,21 +161,21 @@ Both take `(batch, 1, 6000)`: one vertical channel, 60 s at 100 Hz.
 | Conv blocks | 3 (16, 32, 64 filters; kernels 7, 5, 3) | 4 (32, 64, 128, 128 filters) |
 | Head | global average pool → 1 linear layer | global average pool → 2 linear layers, dropout |
 | Parameters | ~9.4k | ~94k |
-| Held-out accuracy | 92–98 % depending on class subset | 94–98 % |
+| Held-out accuracy | 83.0–98.5 % depending on class subset | 86.0–98.5 % |
 
 ```python
 from src.models import CompactSeismicCNN, SeismicCNN
 model = CompactSeismicCNN(num_classes=4, input_channels=1, input_length=6000)
 ```
 
-Deployed models in `models/` (test = grouped test split, held-out = `datasets/heldout_inference/`; full details on [the model page](docs/index_draft.html)):
+Deployed models in `models/` (test = grouped test split, held-out = `datasets/heldout_inference/`; full details on [the model page](docs/index_draft.html)). Scores dropped from the September versions because the shortcuts Concord found (issue #25) are gone: every class is now 2–20 Hz, and Noise and Traffic come from the same sites and hours.
 
 | Classes | Compact | Standard |
 |---|---|---|
-| Noise / Earthquake | `compact-v5`: 99.2 % test, 97.5 % held-out | `standard-v4`: 98.9 % test, 97.5 % held-out |
-| Noise / Traffic | `compact-v6`: 95.9 % test, 95.0 % held-out | `standard-v5`: 97.4 % test, 94.0 % held-out |
-| Noise / Traffic / Earthquake | `compact-v3`: 94.5 % test, 95.3 % held-out | `standard-v2`: 96.0 % test, 95.7 % held-out |
-| Noise / Traffic / Train / Aircraft | `compact-v4`: 94.3 % test, 92.5 % held-out | `standard-v3`: 96.1 % test, 95.1 % held-out |
+| Noise / Earthquake | `compact-v5`: 99.6 % test, 98.5 % held-out | `standard-v4`: 98.8 % test, 98.5 % held-out |
+| Noise / Traffic | `compact-v6`: 85.9 % test, 83.5 % held-out | `standard-v5`: 88.7 % test, 86.0 % held-out |
+| Noise / Traffic / Earthquake | `compact-v3`: 87.0 % test, 89.7 % held-out | `standard-v2`: 92.8 % test, 91.3 % held-out |
+| Noise / Traffic / Train / Aircraft | `compact-v4`: 81.6 % test, 83.0 % held-out | `standard-v3`: 87.5 % test, 87.0 % held-out |
 | Noise / Earthquake, July 2026 (earlier split) | `compact-v2`, `compact-v1` | `standard-v1` |
 
 Each conv block is convolution → batch norm → ReLU → max-pool. A last-layer feature sees about 0.45 s of signal (compact model), and the global average pool reports how much of each learned pattern occurs in the minute. [docs/report.html](docs/report.html#cnn) explains this step by step.
@@ -183,7 +183,9 @@ Each conv block is convolution → batch norm → ReLU → max-pool. A last-laye
 ## Limitations
 
 - **Weak labels.** Labels come from rules (time of day, timetable, catalog), so some windows are mislabeled. Use the review site to flag them.
-- **One site per class.** Trains come only from K222, aircraft only from Turnagain, and earthquakes only from AK broadbands. A model may partly learn the sensor or the site. The held-out set uses the same stations, so it cannot rule this out.
+- **Few sites per class.** Trains come from three AK strong-motion sites (K222, K217, MS01), aircraft only from the two Turnagain Shakes, and earthquakes only from three AK broadbands. A model may partly learn the sensor or the site. The held-out set uses the same stations, so it cannot rule this out.
+- **Aircraft is weak at 2–20 Hz.** Aircraft are found in the 20–45 Hz band, but every class is trained on 2–20 Hz so the band cannot give the class away. In that band most aircraft are faint against the Turnagain background, and the four-class models call some quiet Noise Aircraft (compact-v4 25 of 100 held-out Noise windows, standard-v3 9).
+- **Earthquake has no energy above 25 Hz.** The AK broadbands record at 50 Hz, so the earthquake set (and its Noise) has nothing above 25 Hz, unlike every other set.
 - **No amplitude, short memory.** Per-window z-scoring removes loudness, and global pooling removes timing within the window.
 - **Closed set.** Every window is forced into one known class. There is no "unknown" output and no handling of mixed windows.
 - **Limited coverage.** M ≥ 3 only, one week of traffic in September, no winter data, no avalanches yet. Held-out Train windows come from a test split, not from new days.

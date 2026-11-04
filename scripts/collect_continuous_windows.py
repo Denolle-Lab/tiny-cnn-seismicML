@@ -46,6 +46,26 @@ arrivals (an M2.9 at 40 km showed up in a "Traffic" window on 2026-09-09).
   all        every window gets ``--class-name`` (e.g. a stretch known to be
              quiet, labeled Noise, or a record you will hand-label)
 
+Daytime at a positive site (``--day-label``, rule and events modes): with
+Noise only from the night hours, every daytime window at a Train or Aircraft
+site is a positive, and a model can learn the site and the hour instead of
+the source (Concord review, 2026-10). The windows that are not positive and
+fall in ``--day-label-hours`` are, in order:
+  Noise      if ``--day-noise-max-ratio`` is set, the window is clear of every
+             ``--noise-exclude-events`` time, and its training-band rms is at
+             most that multiple of the station's median night Noise rms
+             (the quiet minutes between cars and flights)
+  dropped    if its band rms is above ``--day-label-max-ratio`` x the station
+             rolling median (an aircraft or train just under the positive
+             threshold is not background)
+  --day-label  otherwise (Traffic at an urban site: the daytime background)
+``--noise-exclude-events`` (e.g. flight times from fetch_flights_opensky.py)
+also drops night Noise windows within ``--noise-exclude-pad`` of an event.
+In ``all`` mode with ``--class-name Noise`` (a quiet station, no positives),
+``--day-noise-max-ratio`` alone keeps the day windows that pass the Noise
+test above and drops the rest: daytime Noise from a site other than the
+positive ones (configs/ak_quiet_stations.yaml).
+
 Preprocessing matches notebooks/02_labeling/download_AK_only_data.ipynb:
 merge, linear detrend, demean, bandpass 2-20 Hz (4 corners), resample to
 100 Hz. Windows containing a data gap are dropped.
@@ -126,6 +146,25 @@ def parse_args():
     p.add_argument('--noise-max-ratio', type=float, default=None,
                    help='drop Noise windows whose band rms exceeds this multiple of the station rolling median '
                         '(+/- --rule-local-min): unscheduled trains and other unlabeled events stay out of Noise')
+    p.add_argument('--noise-exclude-events', default=None,
+                   help='CSV with a "time" column (UTC) and optional "duration_sec", e.g. flight times from '
+                        'scripts/fetch_flights_opensky.py: Noise windows within --noise-exclude-pad of any event '
+                        'are dropped')
+    p.add_argument('--noise-exclude-pad', type=float, default=180.0,
+                   help='seconds kept clear before each event time and after its duration')
+    p.add_argument('--day-label', default=None, choices=list(LABEL_MAP.values()),
+                   help='rule/events: windows that are not positive and fall in --day-label-hours get this class '
+                        '(Traffic at an urban site) instead of Noise, so the hour alone does not mean "positive"')
+    p.add_argument('--day-label-hours', type=int, nargs=2, default=(7, 19), metavar=('H0', 'H1'))
+    p.add_argument('--day-label-max-ratio', type=float, default=1.5,
+                   help='drop day windows whose band rms is above this multiple of the station rolling median '
+                        '(+/- --rule-local-min): an aircraft just under the rule threshold is not Traffic')
+    p.add_argument('--day-label-keep', type=float, default=1.0,
+                   help='keep this fraction of the --day-label windows (seeded); a day gives ~700 per station')
+    p.add_argument('--day-noise-max-ratio', type=float, default=None,
+                   help='with --day-label, or --label-from all --class-name Noise: a window in --day-label-hours '
+                        "whose training-band rms is at most this multiple of the station's median night Noise rms, "
+                        'and clear of --noise-exclude-events, stays Noise; None keeps no daytime Noise')
     p.add_argument('--event-offsets', default=None,
                    help='events: per-station minutes added to event times, e.g. "K208=+9,R1796=+8,K222=+30"')
 
@@ -214,6 +253,8 @@ def runs_from_config(args):
         # carry every setting that changes the output (reproducible pull).
         for key in ('channel', 'chunk_hours', 'events', 'event_pad_sec', 'event_search_sec', 'event_detect_factor',
                     'event_offsets', 'noise_keep', 'positive_keep', 'noise_hours', 'noise_max_ratio',
+                    'noise_exclude_events', 'noise_exclude_pad', 'day_label', 'day_label_hours',
+                    'day_label_max_ratio', 'day_label_keep', 'day_noise_max_ratio',
                     'min_day_night_ratio', 'rule_rms_factor', 'rule_reference', 'rule_local_min',
                     'rule_min_active_sec', 'rule_coincidence', 'reference_rms',
                     'rule_band', 'tz', 'day_hours', 'night_hours', 'burst_factor', 'exclude_events',
@@ -279,14 +320,22 @@ def main():
 
 
 def collect(args):
-    rng = np.random.default_rng(args.seed)
     t0, t1 = UTCDateTime(args.start), UTCDateTime(args.end)
+    # one random stream per pull: with the same seed every day, a multi-day config kept the same minutes of each day
+    rng = np.random.default_rng([args.seed, int(t0.timestamp)])
     if t1 <= t0:
         raise SystemExit('--end must be after --start')
     positive_label = NAME_TO_LABEL[args.class_name.lower()]
     prefix = args.prefix or f'{args.network}_{args.class_name.lower()}'
     if args.label_from == 'events' and args.events and not Path(args.events).is_absolute():
         args.events = str(REPO_ROOT / args.events) if not Path(args.events).exists() else args.events
+    if args.noise_exclude_events and not Path(args.noise_exclude_events).is_absolute():
+        if not Path(args.noise_exclude_events).exists():
+            args.noise_exclude_events = str(REPO_ROOT / args.noise_exclude_events)
+    if args.day_label and args.label_from not in ('rule', 'events'):
+        raise SystemExit('--day-label needs --label-from rule or events (timeofday already labels the day)')
+    if args.day_noise_max_ratio is not None and not args.day_label and args.label_from != 'all':
+        raise SystemExit('--day-noise-max-ratio needs --day-label, or --label-from all (a Noise-only set)')
     events = load_events(args.events) if args.label_from == 'events' else None
     tz = args.tz
     if args.label_from == 'events' and events is None:
@@ -496,28 +545,82 @@ def collect(args):
     # ---- final pass, every mode: what Noise means, and how much of each class to keep
     keep = np.ones(len(meta), dtype=bool)
     is_noise = meta['label'].to_numpy() == 0
+    hours = np.array([int(local_hour(UTCDateTime(x), tz)) for x in meta['start_time']])
+    k = int(args.rule_local_min)  # windows are one minute, so the rolling span is 2k + 1 windows
+    band_col = 'rms_band' if 'rms_band' in meta else 'rms'
+    local_med = meta.groupby('station')[band_col].transform(
+        lambda r: r.rolling(2 * k + 1, center=True, min_periods=k).median()).to_numpy()
+    near_event = np.zeros(len(meta), dtype=bool)
+    if args.noise_exclude_events:
+        ex = pd.read_csv(args.noise_exclude_events)
+        ex_t = np.sort(pd.to_datetime(ex['time'], utc=True).astype('int64').to_numpy() / 1e9)
+        dur = float(ex['duration_sec'].max()) if 'duration_sec' in ex else 0.0
+        w0 = np.array([float(UTCDateTime(x)) for x in meta['start_time']])
+        pad = args.noise_exclude_pad
+        # an event [t, t + dur] padded by pad overlaps the window [w0, w0 + 60) when w0 - pad - dur < t < w0 + 60 + pad
+        near_event = np.searchsorted(ex_t, w0 + WINDOW_SEC + pad) > np.searchsorted(ex_t, w0 - pad - dur, side='right')
+    day_noise = np.zeros(len(meta), dtype=bool)  # daytime Noise is exempt from --noise-hours and --noise-keep
+    day_relabel = np.zeros(len(meta), dtype=bool)
+    if args.day_label or args.day_noise_max_ratio is not None:
+        h0, h1 = args.day_label_hours
+        day = is_noise & (hours >= h0) & (hours < h1)
+        stations = meta['station'].to_numpy()
+    if args.day_noise_max_ratio is not None:
+        # quiet floor per station: median training-band rms of its night Noise
+        train_rms = np.sqrt(np.mean(np.asarray(X, dtype=np.float64) ** 2, axis=1))
+        night_h = args.noise_hours if args.noise_hours is not None else args.night_hours
+        night = is_noise & ~near_event & (hours >= night_h[0]) & (hours < night_h[1])
+        floor = pd.Series(train_rms[night]).groupby(stations[night]).median()
+        floor_w = pd.Series(stations).map(floor).to_numpy(dtype=np.float64)  # NaN: no night Noise, no day Noise
+        day_noise = day & ~near_event & (train_rms <= args.day_noise_max_ratio * floor_w)
+        meta.loc[day_noise, 'label_method'] = (meta.loc[day_noise, 'label_method'].astype(str)
+                                               + f',day_noise:{h0}-{h1}:<={args.day_noise_max_ratio:g}x_night'
+                                               + (f',clear{args.noise_exclude_pad:g}s' if args.noise_exclude_events else ''))
+        day_med = pd.Series(train_rms[day]).groupby(stations[day]).median()
+        print(f'\nDay {h0:02d}-{h1:02d} / night median training-band rms per station: '
+              + ', '.join(f'{s}={day_med.get(s, np.nan) / floor.get(s, np.nan):.1f}x' for s in sorted(set(stations))))
+        if not args.day_label:  # --label-from all: the day windows that fail the quiet test are dropped below
+            print(f'Day windows {h0:02d}-{h1:02d} local at most {args.day_noise_max_ratio:g} x night: '
+                  f'Noise {int(day_noise.sum())} of {int(day.sum())}')
+    if args.day_label:
+        loud = day & ~day_noise & (meta[band_col].to_numpy() > args.day_label_max_ratio * local_med)
+        day_relabel = day & ~day_noise & ~loud
+        day_label = NAME_TO_LABEL[args.day_label.lower()]
+        meta.loc[day_relabel, 'label'] = day_label
+        meta.loc[day_relabel, 'label_name'] = args.day_label
+        meta.loc[day_relabel, 'window_type'] = args.day_label.lower()
+        meta.loc[day_relabel, 'label_method'] = f'day_label:{args.tz}:{h0}-{h1}:<={args.day_label_max_ratio:g}x_local'
+        keep &= ~loud
+        is_noise = meta['label'].to_numpy() == 0
+        print(f'\nDay windows {h0:02d}-{h1:02d} local that are not {args.class_name}: {int(day.sum())} -> '
+              f'{args.day_label} {int(day_relabel.sum())}, Noise {int(day_noise.sum())}, '
+              f'dropped above {args.day_label_max_ratio:g} x local median {int(loud.sum())}')
     if args.noise_hours is not None:
-        hours = np.array([int(local_hour(UTCDateTime(x), tz)) for x in meta['start_time']])
         in_hours = (hours >= args.noise_hours[0]) & (hours < args.noise_hours[1])
-        keep &= ~is_noise | in_hours
+        keep &= ~is_noise | in_hours | day_noise
         print(f'\nNoise restricted to {args.noise_hours[0]:02d}-{args.noise_hours[1]:02d} local: '
-              f'{int((is_noise & ~in_hours).sum())} Noise windows outside dropped')
+              f'{int((is_noise & ~in_hours & ~day_noise).sum())} Noise windows outside dropped')
+    if args.noise_exclude_events:
+        n_near = int((is_noise & near_event & keep).sum())  # among the Noise still kept
+        keep &= ~(is_noise & near_event)
+        print(f'Noise windows within {args.noise_exclude_pad:g} s of an event in '
+              f'{Path(args.noise_exclude_events).name} dropped: {n_near}')
     if args.noise_max_ratio is not None:
-        k = int(args.rule_local_min)
-        col = 'rms_band' if 'rms_band' in meta else 'rms'
-        local_med = meta.groupby('station')[col].transform(lambda r: r.rolling(2 * k + 1, center=True, min_periods=k).median())
-        loud = is_noise & (meta[col].to_numpy() > args.noise_max_ratio * local_med.to_numpy())
+        loud = is_noise & (meta[band_col].to_numpy() > args.noise_max_ratio * local_med)
         keep &= ~loud
         print(f'Noise windows above {args.noise_max_ratio:g} x the local median dropped: {int(loud.sum())}')
     if args.noise_keep < 1.0:
-        keep &= ~is_noise | (rng.random(len(meta)) < args.noise_keep)
+        keep &= ~is_noise | day_noise | (rng.random(len(meta)) < args.noise_keep)
     if args.positive_keep < 1.0:
-        keep &= is_noise | (rng.random(len(meta)) < args.positive_keep)
+        keep &= is_noise | day_relabel | (rng.random(len(meta)) < args.positive_keep)
+    if args.day_label_keep < 1.0:
+        keep &= ~day_relabel | (rng.random(len(meta)) < args.day_label_keep)
     if not keep.all():
         X = X[keep]
         meta = meta[keep].reset_index(drop=True)
         meta['window_id'] = np.arange(len(meta))
-        print(f'Kept {len(meta)} windows (noise_keep {args.noise_keep:g}, positive_keep {args.positive_keep:g})')
+        print(f'Kept {len(meta)} windows (noise_keep {args.noise_keep:g}, positive_keep {args.positive_keep:g}'
+              + (f', day_label_keep {args.day_label_keep:g}' if args.day_label else '') + ')')
     y = meta['label'].to_numpy(dtype=np.int64)
 
     paths = write_dataset(args.out, prefix, X, y, meta, summary_lines=[

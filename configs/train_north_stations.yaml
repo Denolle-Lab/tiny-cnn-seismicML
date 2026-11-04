@@ -1,0 +1,45 @@
+# Train class, north line (issue #25, Concord review: Train from more than one
+# site). Denali Star northbound only; see the offsets note in configs/arr_schedule.yaml.
+#   python scripts/collect_continuous_windows.py --config configs/train_north_stations.yaml
+#
+# Site test 2026-10-23 (loudest 30 s 5-30 Hz burst near the scheduled time):
+#   AK.K217  Chugiak, 300 m from the line: 9 of 12 May-June days at 08:56-09:14
+#            local, 8-34x for 80-160 s. No data after late June.
+#   AK.MS01  Wasilla, 210 m: strong on 9 of 18 days at 09:51-10:10, 9-14x for
+#            80-100 s; other days 3.5-5x for 30 s. The same train as K217, 46-59 min later.
+# Daytime is not labelled Traffic here (unlike K222): the road traffic at these
+# sites is untested, so daytime windows outside the train searches are dropped.
+
+stations:
+  - code: K217
+    network: AK
+    role: primary
+    site: Chugiak
+    distance_to_track_km: 0.30
+    sensors: HNZ accelerometer, 200 Hz
+  - code: MS01
+    network: AK
+    role: primary
+    site: Wasilla
+    distance_to_track_km: 0.21
+    sensors: HNZ accelerometer, 200 Hz
+
+collection:
+  network: AK
+  roles: [primary]
+  class_name: Train
+  label_from: events
+  events: configs/events/arr_summer_2026.csv
+  event_search_sec: 900
+  event_detect_factor: 3
+  exclude_events: true
+  noise_hours: [1, 5]
+  noise_max_ratio: 3
+  noise_keep: 0.3
+  review_sheet: 0
+  tz: America/Anchorage
+  days:
+    # 2026-08-04 left out: machinery at MS01 09:43-09:47 local passed the 3x test
+    - {start: 2026-05-15, end: 2026-08-03}
+    - {start: 2026-08-05, end: 2026-09-13}   # held-out days start 09-14
+  prefix_pattern: "AK_trainnorth_{date}"
